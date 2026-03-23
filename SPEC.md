@@ -5,9 +5,9 @@
 - 実装エンジン: Codex CLI
 - オーケストレーション: OpenClaw
 - バックエンド連携: Sakuraレンタルサーバー CGI/Python API Toolbox
-- ドキュメント版数: v0.7
+- ドキュメント版数: v0.8
 - 作成日: 2026-03-23
-- 最終更新: 2026-03-23（Q44〜Q50 反映: 公開品質記録・AdSense例外・API確認範囲・入力正本・DBフロー・visitor運用を整理）
+- 最終更新: 2026-03-23（Q51〜Q54 反映: run_phase呼び出し方式・失敗時state扱い・git push手動確定・visitor.cgi実装タイミングを整理）
 - 参考実装: `C:\PROJECT\daily-ai-agent`
 - 実行環境: Windows 11 上の WSL2
 
@@ -103,6 +103,11 @@ def main() -> None:
 ```
 
 エージェント間の通信は **ファイルシステム経由** で行う。`artifacts/` `apps/` `docs/` `state/` 配下のファイルを共通の受け渡し面とし、エージェント同士が直接会話する前提にはしない。
+
+**エージェント呼び出し方式:**
+
+- MVP 標準: **同一 Python プロセス内の関数呼び出し**（`import ... as m` → `run_phase("xxx", m.main)`）
+- subprocess による分離実行は MVP 標準にしない（将来の拡張案としては許容）
 
 **Python実装規約（daily-ai-agent 準拠）:**
 
@@ -513,6 +518,32 @@ CORS に見えて SSL 証明書エラーが原因のケースがあるため、A
 - `visitor_tracking` の既定値は `true`
 - 無効化は可。ただし各アプリ `spec.md` に理由を残す
 - 主機能が静的であれば `visitor.cgi` 利用だけで `toolbox` へ昇格させない
+
+**フロント実装方針（Q54）:**
+
+- 発火タイミング: `DOMContentLoaded`（`window.onload` は必須にしない）
+- 実装場所: `app.js` または `api.js`
+- 呼び出しは **非同期**。失敗しても本体機能を止めない
+- `scripts/create-app-template.py` は `visitor_tracking: true` 前提の呼び出し雛形を含める
+- `visitor_tracking: false` の場合は呼び出しコードを生成しないか、無効化コメント付きにする
+
+```javascript
+// visitor.cgi 呼び出し雛形（create-app-template.py が生成）
+document.addEventListener('DOMContentLoaded', () => {
+  if (VISITOR_TRACKING) {
+    fetch(API_CONFIG.baseUrl + API_CONFIG.endpoints.visitor, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'visit',
+        app_id: APP_ID,
+        page: location.pathname,
+        referrer: document.referrer || 'direct'
+      })
+    }).catch(() => {}); // 失敗しても本体を止めない
+  }
+});
+```
 
 **visit リクエスト例:**
 
@@ -1091,6 +1122,10 @@ scripts/main.py
 
 `scripts/main.py` はローカル成果物作成と状態更新を担当してよい。必要に応じてローカルの `git add` / `git commit` までは自動化候補とするが、`git push`、GitHub Pages 反映、リリース扱いの更新は人間承認付き操作とする。
 
+**git push の正式方針（Q53）:**
+- `git push origin main` は **運営者が手動でターミナルから実行** する
+- `scripts/main.py` は公開判定・成果物作成・承認依頼まで行ってよいが、push 自体は自動実行しない
+
 ### フェーズ進行方式
 
 MVP では **人間トリガー + OpenClaw 補助進行** を採用する。
@@ -1105,6 +1140,11 @@ MVP では **人間トリガー + OpenClaw 補助進行** を採用する。
 - `state/company_state.json` の `next_action` を記録する
 - 前フェーズの成果物は保持する
 - 修正後に同一フェーズを再実行する
+
+**失敗時の `current_phase` 扱い（Q52）:**
+- `current_phase` は失敗したフェーズの識別子を **そのまま保持** する（前フェーズへ巻き戻さない）
+- `next_action` で修正内容を表現する
+- 例: `{ "current_phase": "implementation", "next_action": "fix-relative-path-bug" }`
 
 ---
 
