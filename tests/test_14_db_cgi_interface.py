@@ -34,7 +34,7 @@ def _find_db_request_jsons(root: Path = Path("scripts")) -> list[str]:
 
 
 def test_tc_14_01_action_is_always_query():
-    """TC-14-01: db.cgi リクエストの action は常に "query""""
+    """TC-14-01: db.cgi リクエストの action は常に 'query'"""
     scripts_root = Path(__file__).parent.parent / "scripts"
     db_lines = _find_db_cgi_requests(scripts_root)
 
