@@ -1,0 +1,27 @@
+"""scripts/agents/improvement_strategist.py — Improvement Strategist (リリース部 Phase 12)"""
+import logging
+from agents._base import check_inputs, setup_agent_logging
+
+AGENT_ID = "improvement_strategist"
+REQUIRED_INPUTS = ["artifacts/sprints/deploy_report.md"]
+OUTPUTS = [
+    "artifacts/sprints/sprint_next.md",
+    "artifacts/sprints/user_feedback.md",
+    "artifacts/sprints/usage_insights.md",
+]
+logger = logging.getLogger(AGENT_ID)
+
+
+def main() -> None:
+    setup_agent_logging(AGENT_ID)
+    logger.info(f"=== {AGENT_ID} 開始 ===")
+    check_inputs(REQUIRED_INPUTS)
+    raise SystemExit(1)  # TODO: 未実装
+
+
+if __name__ == "__main__":
+    import os, sys
+    from pathlib import Path
+    os.chdir(Path(__file__).parent.parent.parent)
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    main()

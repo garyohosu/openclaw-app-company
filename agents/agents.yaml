@@ -1,0 +1,407 @@
+agents:
+  - id: ceo
+    name: CEO Agent
+    role: executive
+    responsibilities:
+      - approve_product_direction
+      - approve_release
+    inputs:
+      - artifacts/research/scored_ideas.md
+      - artifacts/product/prd.md
+    outputs:
+      - artifacts/executive/decision.md
+    can_run:
+      - review
+      - approve
+    human_approval_required: false
+
+  - id: coo
+    name: COO Agent
+    role: executive
+    responsibilities:
+      - manage_workflow
+      - approve_phases
+    inputs:
+      - state/company_state.json
+      - artifacts/executive/decision.md
+    outputs:
+      - artifacts/executive/workflow_approval.md
+    can_run:
+      - approve
+      - control
+    human_approval_required: false
+
+  - id: roi_agent
+    name: ROI Agent
+    role: executive
+    responsibilities:
+      - roi_evaluation
+    inputs:
+      - artifacts/research/idea_pool.md
+    outputs:
+      - artifacts/research/roi_report.md
+    can_run:
+      - evaluate
+    human_approval_required: false
+
+  - id: market_researcher
+    name: Market Researcher
+    role: research
+    responsibilities:
+      - market_research
+    inputs:
+      - docs/roadmap.md
+    outputs:
+      - artifacts/research/research_report.md
+      - artifacts/research/source_notes.md
+    can_run:
+      - research
+    human_approval_required: false
+
+  - id: trend_analyst
+    name: Trend Analyst
+    role: research
+    responsibilities:
+      - trend_analysis
+    inputs:
+      - docs/roadmap.md
+    outputs:
+      - artifacts/research/trend_report.md
+    can_run:
+      - research
+    human_approval_required: false
+
+  - id: pain_finder
+    name: Pain Finder
+    role: research
+    responsibilities:
+      - pain_finding
+    inputs:
+      - docs/roadmap.md
+    outputs:
+      - artifacts/research/pain_points.md
+    can_run:
+      - research
+    human_approval_required: false
+
+  - id: competitor_analyst
+    name: Competitor Analyst
+    role: research
+    responsibilities:
+      - competitor_analysis
+    inputs:
+      - docs/roadmap.md
+    outputs:
+      - artifacts/research/competitor_report.md
+    can_run:
+      - research
+    human_approval_required: false
+
+  - id: idea_scorer
+    name: Idea Scorer
+    role: research
+    responsibilities:
+      - idea_scoring
+    inputs:
+      - artifacts/research/research_report.md
+      - artifacts/research/idea_pool.md
+    outputs:
+      - artifacts/research/scored_ideas.md
+    can_run:
+      - score
+    human_approval_required: false
+
+  - id: product_planner
+    name: Product Planner
+    role: planning
+    responsibilities:
+      - product_planning
+    inputs:
+      - artifacts/research/scored_ideas.md
+    outputs:
+      - artifacts/product/product_plan.md
+    can_run:
+      - plan
+    human_approval_required: false
+
+  - id: ux_scenario_writer
+    name: UX Scenario Writer
+    role: planning
+    responsibilities:
+      - ux_scenarios
+    inputs:
+      - artifacts/product/prd.md
+    outputs:
+      - artifacts/product/ux_scenarios.md
+    can_run:
+      - write
+    human_approval_required: false
+
+  - id: value_proposition_agent
+    name: Value Proposition Agent
+    role: planning
+    responsibilities:
+      - value_proposition
+    inputs:
+      - artifacts/research/scored_ideas.md
+    outputs:
+      - artifacts/product/value_proposition.md
+    can_run:
+      - write
+    human_approval_required: false
+
+  - id: prd_writer
+    name: PRD Writer
+    role: planning
+    responsibilities:
+      - prd_writing
+    inputs:
+      - artifacts/research/scored_ideas.md
+    outputs:
+      - artifacts/product/prd.md
+    can_run:
+      - write
+    human_approval_required: false
+
+  - id: solution_architect
+    name: Solution Architect
+    role: design
+    responsibilities:
+      - architecture_design
+    inputs:
+      - artifacts/product/prd.md
+    outputs:
+      - artifacts/design/architecture.md
+    can_run:
+      - design
+    human_approval_required: false
+
+  - id: frontend_architect
+    name: Frontend Architect
+    role: design
+    responsibilities:
+      - frontend_design
+    inputs:
+      - artifacts/product/prd.md
+      - artifacts/design/architecture.md
+    outputs:
+      - artifacts/design/frontend_spec.md
+    can_run:
+      - design
+    human_approval_required: false
+
+  - id: api_integration_architect
+    name: API Integration Architect
+    role: design
+    responsibilities:
+      - api_design
+    inputs:
+      - artifacts/product/prd.md
+    outputs:
+      - artifacts/design/api_spec.md
+    can_run:
+      - design
+    human_approval_required: false
+
+  - id: adr_writer
+    name: ADR Writer
+    role: design
+    responsibilities:
+      - adr_writing
+    inputs:
+      - artifacts/design/architecture.md
+    outputs:
+      - artifacts/design/adr/adr-001.md
+    can_run:
+      - write
+    human_approval_required: false
+
+  - id: tech_lead
+    name: Tech Lead Agent
+    role: implementation
+    responsibilities:
+      - implementation_review
+    inputs:
+      - artifacts/design/tasks.md
+    outputs:
+      - artifacts/implementation/tech_review.md
+    can_run:
+      - review
+      - approve
+    human_approval_required: false
+
+  - id: task_breakdown_agent
+    name: Task Breakdown Agent
+    role: implementation
+    responsibilities:
+      - task_breakdown
+    inputs:
+      - artifacts/design/architecture.md
+    outputs:
+      - artifacts/design/tasks.md
+    can_run:
+      - plan
+    human_approval_required: false
+
+  - id: codex_prompt_writer
+    name: Codex Prompt Writer
+    role: implementation
+    responsibilities:
+      - prompt_creation
+    inputs:
+      - artifacts/design/tasks.md
+    outputs:
+      - artifacts/prompts/task-001.md
+    can_run:
+      - write
+    human_approval_required: false
+
+  - id: refactor_director
+    name: Refactor Director
+    role: implementation
+    responsibilities:
+      - refactoring
+    inputs:
+      - artifacts/implementation/tech_review.md
+    outputs:
+      - artifacts/implementation/refactor_plan.md
+    can_run:
+      - review
+      - refactor
+    human_approval_required: false
+
+  - id: test_designer
+    name: Test Designer
+    role: qa
+    responsibilities:
+      - test_design
+    inputs:
+      - artifacts/design/tasks.md
+    outputs:
+      - artifacts/qa/test_plan.md
+    can_run:
+      - design
+    human_approval_required: false
+
+  - id: tdd_enforcer
+    name: TDD Enforcer
+    role: qa
+    responsibilities:
+      - tdd_enforcement
+    inputs:
+      - artifacts/design/tasks.md
+    outputs:
+      - artifacts/qa/tdd_checklist.md
+    can_run:
+      - review
+    human_approval_required: false
+
+  - id: bug_triage_agent
+    name: Bug Triage Agent
+    role: qa
+    responsibilities:
+      - bug_triage
+    inputs:
+      - artifacts/qa/qa_report.md
+    outputs:
+      - artifacts/qa/bug_triage.md
+    can_run:
+      - triage
+    human_approval_required: false
+
+  - id: browser_test_operator
+    name: Browser Test Operator
+    role: qa
+    responsibilities:
+      - browser_testing
+    inputs:
+      - artifacts/qa/test_plan.md
+    outputs:
+      - artifacts/qa/browser_test_report.md
+    can_run:
+      - test
+    human_approval_required: false
+
+  - id: design_critic
+    name: Design Critic
+    role: design_review
+    responsibilities:
+      - design_review
+    inputs:
+      - artifacts/qa/test_plan.md
+    outputs:
+      - artifacts/qa/design_review.md
+    can_run:
+      - review
+    human_approval_required: false
+
+  - id: copy_critic
+    name: Copy Critic
+    role: design_review
+    responsibilities:
+      - copy_review
+    inputs:
+      - artifacts/qa/test_plan.md
+    outputs:
+      - artifacts/qa/copy_review.md
+    can_run:
+      - review
+    human_approval_required: false
+
+  - id: accessibility_reviewer
+    name: Accessibility Reviewer
+    role: design_review
+    responsibilities:
+      - accessibility_review
+    inputs:
+      - artifacts/qa/test_plan.md
+    outputs:
+      - artifacts/qa/accessibility_report.md
+    can_run:
+      - review
+    human_approval_required: false
+
+  - id: github_pages_release_manager
+    name: GitHub Pages Release Manager
+    role: release
+    responsibilities:
+      - release_management
+    inputs:
+      - artifacts/qa/browser_test_report.md
+      - artifacts/qa/design_review.md
+    outputs:
+      - artifacts/sprints/deploy_report.md
+    can_run:
+      - release
+      - approve
+    human_approval_required: false
+
+  - id: sakura_api_coordinator
+    name: Sakura API Coordinator
+    role: release
+    responsibilities:
+      - api_coordination
+    inputs:
+      - artifacts/product/prd.md
+    outputs:
+      - artifacts/design/api_connectivity_report.md
+    can_run:
+      - test
+      - coordinate
+    human_approval_required: false
+
+  - id: improvement_strategist
+    name: Improvement Strategist
+    role: release
+    responsibilities:
+      - improvement_planning
+    inputs:
+      - artifacts/sprints/deploy_report.md
+    outputs:
+      - artifacts/sprints/sprint_next.md
+      - artifacts/sprints/user_feedback.md
+      - artifacts/sprints/usage_insights.md
+    can_run:
+      - analyze
+      - plan
+    human_approval_required: false
