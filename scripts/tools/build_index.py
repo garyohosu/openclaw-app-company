@@ -44,7 +44,7 @@ def build_index(apps_dir: Path = Path("apps"), output: Path = Path("index.html")
         for app_dir in sorted(apps_dir.iterdir()):
             if app_dir.is_dir() and (app_dir / "index.html").exists():
                 app_links.append(
-                    f'    <li><a href="{app_dir.name}/">{app_dir.name}</a></li>'
+                    f'    <li><a href="apps/{app_dir.name}/">{app_dir.name}</a></li>'
                 )
 
     content = INDEX_TEMPLATE.format(
