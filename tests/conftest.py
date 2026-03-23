@@ -33,6 +33,7 @@ def company_state_data() -> dict:
             "release_gate_passed": False,
         },
         "next_action": "",
+        "followup_action": "",
     }
 
 

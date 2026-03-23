@@ -30,7 +30,8 @@ class CompanyState:
     runtime_mode: str = "static"
     api_endpoints: List[str] = field(default_factory=list)
     quality_gate: QualityGate = field(default_factory=QualityGate)
-    next_action: str = ""
+    next_action: str = ""      # 今回のパイプライン実行結果 (例: "pipeline-complete")
+    followup_action: str = ""  # 次ランまたは人手で行うべき実務アクション (例: "start-qa-remediation")
 
     @classmethod
     def load(cls, path: Path) -> "CompanyState":

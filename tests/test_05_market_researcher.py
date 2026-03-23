@@ -22,15 +22,10 @@ def test_tc_05_01_research_report_generated(tmp_path, monkeypatch):
     (tmp_path / "docs" / "roadmap.md").write_text("# Roadmap\n- アイデア1\n", encoding="utf-8")
     (tmp_path / "artifacts" / "research").mkdir(parents=True)
 
-    # 未実装のため SystemExit(1) が出ることを確認（TDD 赤フェーズ）
     with pytest.raises(SystemExit) as exc_info:
         market_researcher.main()
-    # 実装後は exit code 0 になるはず → この行をコメントアウトして本実装後に削除
-    # assert exc_info.value.code == 0
-    # assert (tmp_path / "artifacts" / "research" / "research_report.md").exists()
-
-    # 現時点では入力チェックを通過できることを確認（exit=1 は未実装による）
-    assert exc_info.value.code == 1
+    assert exc_info.value.code == 0
+    assert (tmp_path / "artifacts" / "research" / "research_report.md").exists()
 
 
 def test_tc_05_01_research_report_generated_impl(tmp_path, monkeypatch):

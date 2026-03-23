@@ -117,6 +117,15 @@ def update_state_after_phase(state, phase: str, artifacts_dir: Path = ARTIFACTS_
             if "Release NG" in content:
                 state.quality_gate.release_gate_passed = False
 
+    elif phase == "improvement":
+        report = artifacts_dir / "sprints/sprint_next.md"
+        if report.exists():
+            content = report.read_text(encoding="utf-8")
+            for line in content.splitlines():
+                if line.startswith("next_action:"):
+                    state.followup_action = line.split(":", 1)[1].strip()
+                    break
+
 
 def reset_quality_gate_for_phase(state, phase: str) -> None:
     if phase == "api_connectivity":

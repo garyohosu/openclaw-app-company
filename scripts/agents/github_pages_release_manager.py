@@ -18,17 +18,36 @@ REPORT_TEMPLATE = """\
 # deploy_report.md
 
 release_result: {release_result}
+release_readiness: {release_readiness}
 browser_test_report: {browser_status}
 design_review: {design_status}
+publish_blocked_reason: {publish_blocked_reason}
 public_url: {public_url}
 index_updated: {index_updated}
 notes: {notes}
 """
 
 
-def _read_status(path: Path) -> bool:
+_STUB_MARKERS = frozenset({"stub", "placeholder"})
+
+
+def _classify_status(path: Path) -> str:
+    """ファイル内容からステータスを判定する。
+    Returns: "OK" | "NG" | "stub"
+      - "NG"  : FAIL または NG を含む (明示的な失敗)
+      - "OK"  : OK または PASS を含み NG/FAIL がない (合格)
+      - "stub": OK/PASS も NG/FAIL もないが stub/placeholder マーカーを含む (未実施)
+      - それ以外: NG 扱い (未確認コンテンツは安全側へ)
+    """
     content = path.read_text(encoding="utf-8")
-    return "OK" in content and "NG" not in content and "FAIL" not in content
+    if "FAIL" in content or "NG" in content:
+        return "NG"
+    if "OK" in content or "PASS" in content:
+        return "OK"
+    lower = content.lower()
+    if any(marker in lower for marker in _STUB_MARKERS):
+        return "stub"
+    return "NG"  # 未確認コンテンツは安全側
 
 
 def main() -> None:
@@ -38,24 +57,43 @@ def main() -> None:
     browser_path = Path(REQUIRED_INPUTS[0])
     design_path = Path(REQUIRED_INPUTS[1])
 
-    browser_ok = _read_status(browser_path)
-    design_ok = _read_status(design_path)
+    browser_status = _classify_status(browser_path)
+    design_status = _classify_status(design_path)
 
-    if not browser_ok:
+    # 明示的な NG は即失敗
+    if browser_status == "NG":
         logger.error("browser_test_report is NG")
         raise SystemExit(1)
-    if not design_ok:
+    if design_status == "NG":
         logger.error("design_review is NG")
         raise SystemExit(1)
 
+    # stub 検出 → provisional (公開ブロック、ただし pipeline は継続)
+    stubs = [name for name, st in [
+        ("browser_test_report", browser_status),
+        ("design_review", design_status),
+    ] if st == "stub"]
+
+    if stubs:
+        release_result = "Release Provisional"
+        release_readiness = "provisional"
+        blocked_reason = f"QA stub 未完成: {', '.join(stubs)}"
+        logger.warning(f"publish blocked — {blocked_reason}")
+    else:
+        release_result = "Release OK"
+        release_readiness = "ready"
+        blocked_reason = "-"
+        logger.info("Release OK — QA 両方合格")
+
     out_dir = Path("artifacts") / "sprints"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / "deploy_report.md"
-    out_path.write_text(
+    (out_dir / "deploy_report.md").write_text(
         REPORT_TEMPLATE.format(
-            release_result="Release OK",
-            browser_status="OK",
-            design_status="OK",
+            release_result=release_result,
+            release_readiness=release_readiness,
+            browser_status=browser_status,
+            design_status=design_status,
+            publish_blocked_reason=blocked_reason,
             public_url="N/A",
             index_updated="false",
             notes="minimal release report",

@@ -39,6 +39,29 @@ def setup_agent_logging(agent_id: str) -> logging.Logger:
     return logger
 
 
+def get_selected_app(
+    decision_path: str = "artifacts/executive/decision.md",
+    scored_path: str = "artifacts/research/scored_ideas.md",
+) -> str:
+    """
+    selected_app を一意に決定する共通ロジック。
+    decision.md の selected_app を優先し、なければ scored_ideas.md の先頭アイデアを返す。
+    """
+    dec = Path(decision_path)
+    if dec.exists():
+        for line in dec.read_text(encoding="utf-8").splitlines():
+            if line.startswith("selected_app:"):
+                app = line.split(":", 1)[1].strip()
+                if app:
+                    return app
+    scored = Path(scored_path)
+    if scored.exists():
+        for line in scored.read_text(encoding="utf-8").splitlines():
+            if line.startswith("## "):
+                return line[3:].strip()
+    return "未定"
+
+
 def check_inputs(required: list) -> None:
     """必須入力ファイルの存在確認。不在なら SystemExit(1) を送出する。"""
     for path_str in required:

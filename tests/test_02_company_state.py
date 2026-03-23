@@ -48,6 +48,19 @@ def test_tc_02_04_phase_failure_state(tmp_path):
     assert "Fix" in reloaded.next_action
 
 
+def test_tc_02_05a_followup_action_saves_and_reloads(tmp_path):
+    """TC-02-05a: followup_action が保存・再読み込みで保持される"""
+    state = CompanyState(current_phase="improvement", next_action="pipeline-complete")
+    state.followup_action = "start-qa-remediation"
+
+    p = tmp_path / "state.json"
+    state.save(p)
+    reloaded = CompanyState.load(p)
+
+    assert reloaded.followup_action == "start-qa-remediation"
+    assert reloaded.next_action == "pipeline-complete"
+
+
 def test_tc_02_05_quality_gate_defaults():
     """TC-02-05: 新規 QualityGate の全フラグが False"""
     gate = QualityGate()
