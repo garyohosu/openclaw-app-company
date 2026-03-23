@@ -1,6 +1,6 @@
 # USECASE.md — OpenClaw App Company ユースケース図
 
-- 対象: SPEC.md v0.5
+- 対象: SPEC.md v0.7
 - 作成日: 2026-03-23
 
 ---
@@ -121,11 +121,11 @@ flowchart TD
 
     %% ── 主フロー ────────────────────────────────────
     P0 --> P1 --> P2 --> P3 --> P4 --> P5
-    P5 --> P6
-    P5 --> P7
-    P6 --> P8
-    P7 --> P8
     P5 -->|"Static のみ\nAPI/DB不要"| P8
+    P5 -->|"toolbox / db"| P6
+    P6 -->|"toolbox"| P8
+    P6 -->|"db"| P7
+    P7 --> P8
     P8 --> P9 --> P10 --> P11 --> P12
     P12 -. "次アプリを追加する場合" .-> P1
     P12 -. "同一アプリを改善する場合" .-> P5
@@ -175,9 +175,9 @@ flowchart LR
 
     s_toolbox -->|"fetch()"| sakura
     s_db -->|"fetch()"| sakura
-    s_static -. "自動記録" .-> visitor
-    s_toolbox -. "自動記録" .-> visitor
-    s_db -. "自動記録" .-> visitor
+    s_static -. "visitor_tracking=true の場合" .-> visitor
+    s_toolbox -. "visitor_tracking=true の場合" .-> visitor
+    s_db -. "visitor_tracking=true の場合" .-> visitor
 ```
 
 ---
@@ -237,7 +237,7 @@ flowchart LR
     end
 
     subgraph RELEASE["リリース・改善部"]
-        RM["Release Manager"]
+        RM["GitHub Pages\nRelease Manager"]
         SC["Sakura API Coordinator"]
         IS2["Improvement Strategist"]
     end
@@ -255,7 +255,8 @@ flowchart LR
     RESEARCH --> P1
     EXEC -. "方向性承認" .-> P1
     PLAN --> P3
-    ROI -. "ROI評価" .-> P3
+    ROI -. "軽量ROI評価" .-> P1
+    ROI -. "詳細ROI評価" .-> P3
     DESIGN --> P4
     SC --> P6
     IMPL --> P8
@@ -275,22 +276,19 @@ flowchart LR
 ```mermaid
 flowchart TD
     start(["Phase 11: 公開 開始"])
-    check1{"本体 index.html に\nAdSense タグあり？"}
-    check2{"ルート index.html に\nAdSense タグあり？"}
-    check3{"AdSense による\nレイアウト崩れなし？"}
-    check4{"テストページに\nAdSense 混入なし？"}
+    check1{"収益対象ページに\nAdSense タグあり？"}
+    check2{"AdSense による\nレイアウト崩れなし？"}
+    check3{"テストページ・管理ページに\nAdSense 混入なし？"}
     ok(["✅ Release OK\nGitHub Pages 公開へ"])
     ng(["❌ Release NG\n修正して再確認"])
 
     start --> check1
     check1 -->|"あり"| check2
     check1 -->|"なし"| ng
-    check2 -->|"あり"| check3
-    check2 -->|"なし"| ng
-    check3 -->|"問題なし"| check4
-    check3 -->|"崩れあり"| ng
-    check4 -->|"混入なし"| ok
-    check4 -->|"混入あり"| ng
+    check2 -->|"問題なし"| check3
+    check2 -->|"崩れあり"| ng
+    check3 -->|"混入なし"| ok
+    check3 -->|"混入あり"| ng
 ```
 
 ---

@@ -2,7 +2,7 @@
 
 作成日: 2026-03-23
 対象: SPEC.md 補足設計回答 / 追加レビュー回答
-ステータス: 既存43件 回答確定 / 新規7件 要回答
+ステータス: 全50件 回答確定 / SPEC.md v0.7・USECASE.md 反映済み
 
 ---
 
@@ -955,93 +955,172 @@ _全43件 回答確定。SPEC.md v0.6 へ反映済み。_
 
 ---
 
-## 2026-03-23 SPEC.md v0.6 追加レビュー（未回答）
+## 2026-03-23 SPEC.md / USECASE.md 追加レビュー回答（Q44〜Q50 回答確定）
 
 ## Q44. G6 公開品質の判定結果は `state/company_state.json` と `deploy_report.md` のどちらへどう記録するか
 
-**該当箇所:** セクション17、21、Phase 11
+**回答:**
+両方に記録する。役割を分ける。
 
-- G6 では AdSense 埋め込みやテストページ混入有無まで公開品質に含めている
-- `state/company_state.json` の `quality_gate` には `pages_ready` `ssl_verified` `cors_verified` `browser_test_passed` しかない
-- `artifacts/sprints/deploy_report.md` の内容にも AdSense 判定項目がない
+**正式方針:**
 
-公開可否の根拠をどこに残すかが未固定。少なくとも `adsense_verified` や `release_gate_passed` 相当の記録先を決めたい。
+- `state/company_state.json`: 機械可読な最新状態の正本
+- `artifacts/sprints/deploy_report.md`: 人間向けの公開記録・判定理由の正本
+
+`state/company_state.json` の `quality_gate` に以下を追加する。
+
+- `adsense_verified`
+- `test_pages_adsense_clean`
+- `release_gate_passed`
+
+`artifacts/sprints/deploy_report.md` には以下を明記する。
+
+- 公開URL
+- ビルド状態
+- AdSense確認結果
+- テストページ混入有無
+- 既知の問題
+- 最終公開可否
+
+**理由:**
+`state` だけだと「なぜ OK / NG だったか」が薄く、`deploy_report` だけだと自動判定しにくい。機械判定は `state`、人間の監査証跡は `deploy_report` に分けるのが自然。
 
 ---
 
 ## Q45. 各アプリ `spec.md` の `adsense_required` は常に `true` なのか、例外を許すのか
 
-**該当箇所:** セクション5.3、22
+**回答:**
+例外を許す。デフォルトは `true` とする。
 
-- セクション5.3 では各アプリ本体 `index.html` に AdSense 必須
-- セクション22 のテンプレート項目には `adsense_required (true / false)` がある
+**正式方針:**
 
-全アプリ本体ページで必須なら `adsense_required` は固定値になり、可変フィールドとして持つ意味が薄い。収益対象外アプリや例外ケースを許すかを明確にしたい。
+- デフォルト: `adsense_required: true`
+- 例外許可:
+- 社内検証用
+- 純粋ツールページで収益対象外と明示したもの
+- 法務・審査・UX上の理由で広告非表示が妥当なもの
+
+例外時は `spec.md` に理由必須とする。
+
+- `adsense_required: false`
+- `adsense_exception_reason: ...`
+
+**理由:**
+原則必須・例外明示の形が最も整合する。テンプレートに `true / false` がある以上、完全固定値より例外を説明責任付きで許すほうが自然。
 
 ---
 
 ## Q46. API疎通確認は `now.cgi` / `uuid.cgi` の汎用疎通だけでよいか、それとも採用した各 CGI を個別確認するか
 
-**該当箇所:** Phase 6、16.2
+**回答:**
+汎用疎通 + 採用エンドポイント個別確認の両方を必須とする。
 
-- Phase 6 の内容は `now.cgi` か `uuid.cgi` で疎通確認
-- ただし実アプリでは `validate.cgi` `convert.cgi` `visitor.cgi` だけを使うケースもある
+**正式手順:**
 
-汎用疎通だけだと「API サーバーは見えるが、実際に使う CGI が壊れている」ケースを取りこぼす。最低限、採用した各エンドポイントの個別確認要否を固定したい。
+- 汎用疎通確認:
+- `now.cgi` または `uuid.cgi`
+- 採用エンドポイント個別確認:
+- そのアプリが使う CGI をすべて `test-api.html` で確認
+- 例: `validate.cgi`, `convert.cgi`, `visitor.cgi`, `db.cgi`
+
+**判定ルール:**
+
+- 汎用疎通 OK だけでは Phase 6 合格にしない
+- 採用した各 CGI が正常応答して初めて Phase 6 合格
+
+**理由:**
+サーバー疎通だけで実際の採用 CGI が壊れていたら、事前確認の意味が薄い。利用前確認を `test-api.html` で必須にする方針と揃える。
 
 ---
 
 ## Q47. Phase 1 の「既存アプリ一覧と利用状況」の正式入力ファイルは何か
 
-**該当箇所:** Phase 1、Phase 12
+**回答:**
+専用集約ファイルを正本にする。
 
-- Phase 1 の入力に「既存アプリ一覧と利用状況」がある
-- Phase 12 では `artifacts/sprints/usage_insights.md` と `user_feedback.md` を作る
-- ルート `index.html` にもアプリ一覧はあるが、これは表示用であり分析用の正本とは限らない
+**正式入力ファイル:**
 
-Market Researcher が何を読むべきかを固定したい。候補は `artifacts/sprints/usage_insights.md`、`artifacts/sprints/user_feedback.md`、各アプリ `spec.md`、あるいはそれらを集約した専用ファイル。
+- `artifacts/research/app_inventory.md`
+- `artifacts/sprints/usage_insights.md`
+- `artifacts/sprints/user_feedback.md`
+
+**役割分担:**
+
+- `app_inventory.md`: 既存アプリ一覧の正本
+- `usage_insights.md`: 数値系の利用状況
+- `user_feedback.md`: 定性フィードバック
+- 各アプリ `spec.md`: 個別仕様参照用であり、一覧の正本ではない
+- ルート `index.html`: 表示用であり分析用の正本ではない
+
+**理由:**
+一覧・定量・定性の3点セットに分けると、Market Researcher が読む正本がぶれない。
 
 ---
 
-## 2026-03-23 USECASE.md レビュー追加不明点（未回答）
+## 2026-03-23 USECASE.md レビュー追加回答（Q48〜Q50 回答確定）
 
 ## Q48. DBアプリは Phase 6（API疎通確認）と Phase 7（DB接続確認）の両方を通るのが正式か
 
-**該当箇所:** USECASE.md セクション3、SPEC.md Phase 6-7
+**回答:**
+両方必須。Phase 7 は Phase 6 を内包しない。
 
-- USECASE のワークフロー図では `P5 -> P7 -> P8` が許されており、DBアプリが Phase 6 を飛ばせるように読める
-- ただし DBアプリも `db.cgi` を `fetch()` する以上、CORS / SSL / 到達性の観点では API疎通確認対象とも読める
+**正式方針:**
 
-固定したい点:
+- `runtime_mode: db` は
+- Phase 6: `db.cgi` への到達性・SSL・CORS・基本応答確認
+- Phase 7: `select` / `insert` / `count` / `error` のDB機能確認
 
-- `runtime_mode: db` は Phase 6 と Phase 7 の両方必須か
-- それとも Phase 7 が Phase 6 を内包するとみなしてよいか
+したがって DB アプリは `P5 -> P6 -> P7 -> P8` を正式ルートとする。
+
+**理由:**
+Phase 6 は通信基盤確認、Phase 7 は DB 操作確認として役割が別。分けたほうが事故りにくい。
 
 ---
 
 ## Q49. `visitor.cgi` による訪問記録は全アプリ共通の標準実装か、それとも任意機能か
 
-**該当箇所:** USECASE.md セクション4、SPEC.md セクション7・22
+**回答:**
+標準推奨だが、必須ではなく任意機能とする。
 
-- USECASE の「アプリ利用フロー」では Static / Toolbox / DB の全アプリから `visitor.cgi` へ「自動記録」の矢印が出ている
-- 一方で SPEC では `visitor.cgi` は Toolbox の一機能として列挙され、各アプリ `spec.md` には `visitor_tracking` という可変項目がある
+**正式方針:**
 
-確認したい点:
+- テンプレート既定値: `visitor_tracking: true`
+- 無効化は可
+- 無効化する場合は `spec.md` に理由を記載
+- Static アプリでも `visitor.cgi` を使ってよい
+- Static アプリが `visitor.cgi` を使っても分類は `static` のままでよい
 
-- 全公開アプリで `visitor.cgi` を標準搭載するのか
-- それとも `visitor_tracking: true` のアプリだけが使う任意機能か
-- Static アプリでも `visitor.cgi` を使う場合、分類上は Static のままでよいか
+**理由:**
+USECASE の全アプリ矢印と SPEC の可変項目を両立するには、「原則オン、例外オフ」が自然。改善スプリントへの主要入力として推奨度は高い。
 
 ---
 
 ## Q50. AdSense 判定フローは「収益対象ページ」まで確認範囲に含めるか
 
-**該当箇所:** USECASE.md セクション6、SPEC.md セクション5.3・6.4
+**回答:**
+含める。USECASE の判定フローを一般化する。
 
-- SPEC では AdSense 対象を「本体公開HTMLおよび収益対象ページ」としている
-- USECASE の AdSense 判定フローは `本体 index.html` と `ルート index.html` のみを確認対象にしている
+**正式方針:**
 
-確認したい点:
+- Release OK 判定対象:
+- ルート `index.html`
+- 各アプリ本体 `index.html`
+- 収益対象ページすべて（例: `landing.html` など）
+- 対象外:
+- `test-api.html`
+- `test-db-readonly.html`
+- 管理ページ
+- ローカル確認ページ
 
-- 将来 `landing.html` などの収益導線ページを持つ場合、それらも Release OK 判定の対象に含めるか
-- 含めるなら、USECASE の判定フローを `収益対象ページすべて` に一般化するか
+**USECASE 修正文言案:**
+
+- 収益対象ページに AdSense タグあり？
+- AdSense によるレイアウト崩れなし？
+- テストページ・管理ページに AdSense 混入なし？
+
+**理由:**
+AdSense 対象を `index.html` 限定にすると現行仕様とずれるため、収益対象ページ全体に一般化したほうが自然。
+
+---
+
+_全50件 回答確定。SPEC.md v0.7・USECASE.md へ反映済み。_
