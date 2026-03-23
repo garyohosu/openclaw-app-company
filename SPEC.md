@@ -7,7 +7,7 @@
 - バックエンド連携: Sakuraレンタルサーバー CGI/Python API Toolbox
 - ドキュメント版数: v0.9
 - 作成日: 2026-03-23
-- 最終更新: 2026-03-23（Q55〜Q60 反映: agents.yaml入出力の利用方針・QualityGate更新責任・AppSpec実装形式・CORS/AdSense/DeployReport表現を整理）
+- 最終更新: 2026-03-23（Q55〜Q64 反映: agents.yaml入出力の利用方針・QualityGate更新責任・AppSpec実装形式・CORS/AdSense/DeployReport表現・TDD方針を整理）
 - 参考実装: `C:\PROJECT\daily-ai-agent`
 - 実行環境: Windows 11 上の WSL2
 
@@ -1167,6 +1167,7 @@ MVP では **人間トリガー + OpenClaw 補助進行** を採用する。
 - `state/company_state.json`（実行時生成、`.gitignore` 対象）
 - `scripts/main.py`
 - `scripts/agents/__init__.py`
+- `tests/`
 
 ### Phase 1: 市場調査
 
@@ -1386,6 +1387,12 @@ Phase 6 完了後、DB利用時のみ実施。
 
 ## 16. テスト仕様
 
+MVP の標準自動テストは `pytest` とし、テストコードは `tests/` 配下に配置する。ファイルI/O を伴うテストは `tmp_path` フィクスチャを前提にしてよい。
+
+外部 CGI は自動テストではモックに固定し、Phase 6 / 7 の `pytest` ではリクエスト生成、レスポンス解釈、レポート生成、成功/失敗分岐、OpenClaw による state 更新統合までを検証する。実URL到達性、SSL、CORS、実DB応答確認は `test-api.html`、ローカルHTTPサーバー、`browser-use CLI`、手動ブラウザ確認の組み合わせで行う。
+
+Pages URL の扱いは、公開前の構成確認では各アプリ `spec.md` の `pages_path`、公開後 E2E では `artifacts/sprints/deploy_report.md` の `public_url` を正本とする。固定の GitHub Pages URL 文字列をテスト正本にしない。
+
 ### 16.1 Static 共通テスト
 
 - Pages 上で表示できる
@@ -1596,6 +1603,8 @@ Phase 6 完了後、DB利用時のみ実施。
 `current_phase` は英語識別子のみを正本として持つ。正規の enum は `initialization` `research` `idea_selection` `product` `design` `task_breakdown` `api_connectivity` `db_connectivity` `prompt_creation` `implementation` `testing` `release` `improvement` とする。番号表示が必要な場合は UI または `state/schema.md` 側の表示順マップから導出し、状態ファイル本体には保持しない。詳細なレビューステップを区別したい場合は `sub_phase` または `next_action` で補助管理する。
 
 `state/company_state.json` は機械可読な最新状態の正本、`artifacts/sprints/deploy_report.md` は公開判定理由を含む人間向け監査記録の正本とする。
+
+`CompanyState.load(path)` は既存状態の読み込み専用とし、対象ファイルが存在しない場合は `FileNotFoundError` を送出する。初期状態の生成は Phase 0 の初期化処理、または `CompanyState.default()` のような別APIで明示的に扱う。
 
 **`quality_gate` フラグの更新責任（Q56）:**
 - 判定責任は各担当エージェント（成果物・レポートを出力する）

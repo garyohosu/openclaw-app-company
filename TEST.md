@@ -10,11 +10,11 @@
 
 | 項目 | 方針 |
 |-----|------|
-| テストフレームワーク | pytest（予定。Q58 で確認） |
+| テストフレームワーク | `pytest` |
 | ファイルI/O | `tmp_path` フィクスチャで一時ディレクトリを使う |
-| 外部CGI | MVP ではモック。実サーバーへのリクエストは手動確認（Q59 で確認） |
+| 外部CGI | 自動テストではモック固定。実サーバー疎通は `test-api.html` / ローカルHTTPサーバー / 手動確認で行う |
 | カバレッジ目標 | `scripts/` 配下の主要パスを網羅。Codex CLI 生成コードは対象外 |
-| テスト配置 | `tests/` ディレクトリ（未作成。Phase 0 成果物に追加候補） |
+| テスト配置 | `tests/` ディレクトリ |
 
 ---
 
@@ -79,7 +79,7 @@
 |-----|------|
 | 前提 | `state/company_state.json` が存在しない |
 | 操作 | `CompanyState.load(path)` |
-| 期待結果 | `FileNotFoundError` または初期値を返す（実装依存。Q58 で確認） |
+| 期待結果 | `FileNotFoundError` が送出される |
 
 ### TC-02-03 保存と再読み込みの一致
 
@@ -197,11 +197,15 @@
 | 操作 | `market_researcher.main()` 実行後 |
 | 期待結果 | `artifacts/research/source_notes.md` が生成される |
 
-### TC-05-03 `idea_pool.md` が 10 件以上の候補を含む
+---
+
+## TC-05A: `Idea Scorer`（Phase 2）
+
+### TC-05-03 `scored_ideas.md` が 10 件以上の候補を含む
 
 | 項目 | 内容 |
 |-----|------|
-| 前提 | `research_report.md` が存在する |
+| 前提 | `research_report.md` と `idea_pool.md` が存在する |
 | 操作 | `idea_scorer.main()` 実行後に `scored_ideas.md` を読む |
 | 期待結果 | 候補10件以上が記録されている |
 
@@ -367,6 +371,22 @@
 | 操作 | 任意エージェントの `main()` 実行中に `company_state.json` を監視する |
 | 期待結果 | エージェント実行中に `company_state.json` が更新されない |
 
+### TC-10-04 Phase 11 OK 判定を OpenClaw が state に反映する
+
+| 項目 | 内容 |
+|-----|------|
+| 前提 | `deploy_report.md` に AdSense OK・混入なし・公開可が記録されている |
+| 操作 | `main.py` が Phase 11 完了処理を実行後に `company_state.json` を読む |
+| 期待結果 | `quality_gate.adsense_verified = true`、`quality_gate.test_pages_adsense_clean = true` |
+
+### TC-10-05 Phase 11 NG 判定を OpenClaw が state に反映する
+
+| 項目 | 内容 |
+|-----|------|
+| 前提 | `deploy_report.md` に Release NG が記録されている |
+| 操作 | `main.py` が Phase 11 完了処理を実行後に `company_state.json` を読む |
+| 期待結果 | `quality_gate.release_gate_passed = false` が維持される |
+
 ---
 
 ## TC-11: AdSense ゲート（Phase 11）
@@ -384,21 +404,24 @@
 | 項目 | 内容 |
 |-----|------|
 | 前提 | ルート `index.html` と各アプリ `index.html` の両方に `ca-pub-6743751614716161` を含む |
-| 期待結果 | `quality_gate.adsense_verified = true` に更新される |
+| 操作 | `github_pages_release_manager.main()` |
+| 期待結果 | `deploy_report.md` に AdSense OK と Release OK が記録される |
 
 ### TC-11-03 テストページへの AdSense 混入を検出する
 
 | 項目 | 内容 |
 |-----|------|
 | 前提 | `test-api.html` に誤って AdSense タグが混入している |
-| 期待結果 | `quality_gate.test_pages_adsense_clean = false` / Release NG |
+| 操作 | `github_pages_release_manager.main()` |
+| 期待結果 | `deploy_report.md` にテストページ混入ありと Release NG が記録される |
 
 ### TC-11-04 AdSense タグ埋め込みでレイアウト崩れがあれば NG
 
 | 項目 | 内容 |
 |-----|------|
 | 前提 | `design_review.md` にレイアウト崩れが記録されている |
-| 期待結果 | `release_gate_passed = false` |
+| 操作 | `github_pages_release_manager.main()` |
+| 期待結果 | `deploy_report.md` にレイアウト崩れと Release NG が記録される |
 
 ### TC-11-05 `create-app-template.py` が AdSense タグを自動挿入する
 
@@ -520,14 +543,14 @@
 
 | 項目 | 内容 |
 |-----|------|
-| 操作 | `file://` 直開きではなく `http://localhost:8000/apps/app-xxx/` で開く |
+| 操作 | `spec.md` の `pages_path` に対応するローカルHTTPサーバー上の URL で開く |
 | 期待結果 | CSS・JS・画像のすべてが正常に読み込まれる |
 
 ### TC-15-02 サブパスで壊れない
 
 | 項目 | 内容 |
 |-----|------|
-| 操作 | `https://garyohosu.github.io/openclaw-app-company/apps/app-xxx/` で開く |
+| 操作 | `deploy_report.md` の `public_url` で開く |
 | 期待結果 | 404 にならず正常に表示される |
 
 ### TC-15-03 モバイル幅で崩れない
@@ -554,12 +577,13 @@
 | TC-02-01〜05 | `CompanyState` | 単体 |
 | TC-03-01〜04 | `AgentsYaml` | 単体 |
 | TC-04-01〜05 | エージェント基底規約 | 単体 |
-| TC-05-01〜03 | Market Researcher | 単体 |
+| TC-05-01〜02 | Market Researcher | 単体 |
+| TC-05-03 | Idea Scorer | 単体 |
 | TC-06-01〜04 | `CommissionDoc` | 単体 |
 | TC-07-01〜04 | `AppSpec` | 単体 |
 | TC-08-01〜04 | API 疎通確認（Phase 6） | 結合 |
 | TC-09-01〜04 | DB 接続確認（Phase 7） | 結合 |
-| TC-10-01〜03 | `QualityGate` 更新 | 結合 |
+| TC-10-01〜05 | `QualityGate` 更新 | 結合 |
 | TC-11-01〜06 | AdSense ゲート（Phase 11） | 結合 |
 | TC-12-01〜04 | `visitor.cgi` フロント | 結合 |
 | TC-13-01〜04 | Phase 12 ループバック | 結合 |
