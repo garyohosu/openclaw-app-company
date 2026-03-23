@@ -8,7 +8,42 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>家計簿メモ</h1>
+  <main class="wrap">
+    <header>
+      <h1>家計簿メモ</h1>
+      <p>支出をサッと記録して合計を確認。</p>
+    </header>
+
+    <section class="card">
+      <form id="entry-form" class="grid">
+        <label>日付
+          <input type="date" id="date" required>
+        </label>
+        <label>カテゴリ
+          <input type="text" id="category" placeholder="食費 / 交通費 など" required>
+        </label>
+        <label>金額（円）
+          <input type="number" id="amount" min="1" step="1" required>
+        </label>
+        <label>メモ
+          <input type="text" id="memo" placeholder="コンビニ、ランチなど">
+        </label>
+        <button type="submit">追加</button>
+      </form>
+    </section>
+
+    <section class="card summary">
+      <div>件数: <strong id="count">0</strong></div>
+      <div>合計: <strong id="total">¥0</strong></div>
+      <button id="clear-all" class="danger">全削除</button>
+    </section>
+
+    <section class="card">
+      <ul id="list" class="list"></ul>
+      <p id="empty" class="empty">まだデータがありません。</p>
+    </section>
+  </main>
+
   <script src="api.js"></script>
   <script src="app.js"></script>
 </body>
