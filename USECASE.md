@@ -1,6 +1,6 @@
 # USECASE.md — OpenClaw App Company ユースケース図
 
-- 対象: SPEC.md v0.7
+- 対象: SPEC.md v0.9
 - 作成日: 2026-03-23
 
 ---

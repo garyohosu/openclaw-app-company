@@ -1,6 +1,6 @@
 # CLASS.md — OpenClaw App Company クラス図
 
-- 対象: SPEC.md v0.8 / SEQUENCE.md
+- 対象: SPEC.md v0.9 / SEQUENCE.md
 - 作成日: 2026-03-23
 
 ---
@@ -412,7 +412,7 @@ classDiagram
         +str storage_strategy
         +bool visitor_tracking
         +str visitor_tracking_reason
-        +str cors_origin
+        +list~str~ cors_origins
         +bool ssl_checked
         +str pages_path
         +list~str~ known_constraints
@@ -428,6 +428,7 @@ classDiagram
         +str build_status
         +str adsense_check_result
         +bool test_pages_adsense_clean
+        +bool index_updated
         +list~str~ known_issues
         +bool release_gate_passed
     }
@@ -501,14 +502,6 @@ classDiagram
         improvement
     }
 
-    class AdSenseStatus {
-        <<enumeration>>
-        REQUIRED
-        APPLIED
-        VERIFIED
-        EXCEPTION
-    }
-
     AppSpec --> RuntimeMode
     SelectedIdea --> RuntimeMode
     PRD --> RuntimeMode
@@ -517,7 +510,6 @@ classDiagram
     CompanyState --> RuntimeMode
     CompanyState --> PhaseEnum
     SprintNext --> LoopBackTarget
-    AppSpec --> AdSenseStatus
 ```
 
 ---
@@ -633,6 +625,9 @@ classDiagram
         +RuntimeMode runtime_mode
         +bool adsense_required
     }
+    class ArtifactFile {
+        <<artifact>>
+    }
     class SakuraCGIToolbox {
         <<interface>>
     }
@@ -646,7 +641,8 @@ classDiagram
     OpenClaw --> Agent : run_phase で fn() 呼び出し
     OpenClaw --> CompanyState : フェーズ進行・失敗を記録
     OpenClaw --> AgentsYaml : エージェントメタデータ参照
-    Agent --> CompanyState : state 読み書き
+    OpenClaw ..> ArtifactFile : 入出力確認・判定読込
+    Agent --> ArtifactFile : 成果物・判定結果出力
     CodexPromptWriter --|> Agent
     CodexPromptWriter --> CommissionDoc : 生成
     OpenClaw --> CodexCLI : 委任書内容を渡す

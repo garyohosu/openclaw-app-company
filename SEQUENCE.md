@@ -1,6 +1,6 @@
 # SEQUENCE.md — OpenClaw App Company シーケンス図
 
-- 対象: SPEC.md v0.7
+- 対象: SPEC.md v0.9
 - 作成日: 2026-03-23
 
 ---
@@ -209,21 +209,30 @@ sequenceDiagram
 sequenceDiagram
     participant SC as Sakura API Coordinator
     participant local as ローカル HTTP サーバー<br>http://localhost:8000
-    participant sakura as Sakura CGI Toolbox<br>now.cgi / uuid.cgi
+    participant testapi as test-api.html
+    participant sakura as Sakura CGI Toolbox<br>採用 CGI 群
     participant artifacts as artifacts/qa/
 
     Note over SC: runtime_mode が toolbox / db の場合のみ実施
     SC ->> local: test-api.html をブラウザで開く
-    local ->> sakura: fetch() → now.cgi SSL 確認
-    sakura -->> local: 200 OK + JSON（時刻）
-    local ->> sakura: fetch() → uuid.cgi CORS 確認
-    sakura -->> local: 200 OK + JSON（UUID）
+    local -->> testapi: HTML / JS 読み込み
+    Note over SC,testapi: now.cgi / uuid.cgi は汎用疎通の例<br>正式要件は採用済み api_endpoints の全件確認
+    SC ->> testapi: 採用済み CGI を順に実行
+    testapi ->> sakura: fetch() → validate.cgi / convert.cgi / visitor.cgi 等
+    sakura -->> testapi: 200 OK + JSON
+    SC ->> testapi: SSL / CORS / 基本応答を確認
 
-    alt SSL / CORS いずれかでエラー
-        local -->> SC: エラー詳細
+    opt runtime_mode: db
+        SC ->> testapi: db.cgi の基本応答確認
+        testapi ->> sakura: fetch() → db.cgi
+        sakura -->> testapi: 200 OK + JSON
+    end
+
+    alt いずれかの採用 CGI でエラー
+        testapi -->> SC: エラー詳細
         SC ->> artifacts: api_connectivity_report.md（NG 記録）
         SC -->> SC: 差し戻し
-    else 正常
+    else 全 endpoint 正常
         SC ->> artifacts: api_connectivity_report.md（OK 記録）
     end
 ```

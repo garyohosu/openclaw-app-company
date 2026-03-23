@@ -7,7 +7,7 @@
 - バックエンド連携: Sakuraレンタルサーバー CGI/Python API Toolbox
 - ドキュメント版数: v0.9
 - 作成日: 2026-03-23
-- 最終更新: 2026-03-23（Q55〜Q57 反映: agents.yaml入出力の利用方針・QualityGate更新責任・AppSpec実装形式を整理）
+- 最終更新: 2026-03-23（Q55〜Q60 反映: agents.yaml入出力の利用方針・QualityGate更新責任・AppSpec実装形式・CORS/AdSense/DeployReport表現を整理）
 - 参考実装: `C:\PROJECT\daily-ai-agent`
 - 実行環境: Windows 11 上の WSL2
 
@@ -1635,7 +1635,7 @@ Phase 6 完了後、DB利用時のみ実施。
 - storage_strategy
 - visitor_tracking (`true` / `false`, default `true`)
 - visitor_tracking_reason（`false` の場合は必須）
-- cors_origin
+- cors_origins（`["https://garyohosu.github.io", "http://localhost:8000"]` のような配列）
 - ssl_checked
 - pages_path
 - known_constraints
