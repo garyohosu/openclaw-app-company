@@ -1,8 +1,8 @@
 # QandA.md — SPEC.md レビュー質問集
 
 作成日: 2026-03-23
-対象: SPEC.md v0.1 → v0.2 補足設計回答 / SPEC.md v0.3 レビュー追補
-ステータス: 全25件 回答確定 / SPEC.md v0.3 反映済み
+対象: SPEC.md 補足設計回答 / 追加レビュー回答
+ステータス: 全38件 回答確定 / SPEC.md v0.5 反映済み
 
 ---
 
@@ -697,3 +697,165 @@ Phase 0 の成果物に `scripts/main.py` を追加する。必要に応じて `
 `## 14. エージェント実装規約（Python）` として独立章に分離する。旧 Section 14〜24 を 1 つずつ繰り下げ（→ 15〜25）。
 
 _全8件 回答確定。SPEC.md v0.4 へ反映済み。_
+
+---
+
+## 2026-03-23 v0.5 追加レビュー（回答確定）
+
+## Q34. `db.cgi` の `action` は `query` と `database` のどちらが正式仕様か
+
+**回答:**
+`action: "query"` に統一する。`"database"` は表記ゆれとして廃止する。
+
+**正式ルール:**
+
+- `action`: `query`
+- `operation`: 実際の処理種別
+- `select`
+- `insert`
+- `update`
+- `delete`
+- `count`
+- `create_table`
+
+**修正例:**
+
+```json
+{
+  "action": "query",
+  "database": "app003",
+  "operation": "create_table",
+  "table": "items",
+  "schema": {
+    "id": "TEXT PRIMARY KEY",
+    "title": "TEXT NOT NULL",
+    "created_at": "TEXT NOT NULL"
+  },
+  "if_not_exists": true
+}
+```
+
+**理由:**
+
+- フロントとCGIの契約が単純になる
+- `create_table` だけ別 `action` にする理由が薄い
+- 実際の分岐は `operation` で十分表現できる
+
+---
+
+## Q35. 委任書作成を API / DB 疎通確認より先に置くのが正式フローか
+
+**回答:**
+正式フローは **疎通確認を先、委任書確定を後** に直す。
+
+- Phase 5: タスク分解
+- Phase 6: API疎通確認
+- Phase 7: DB接続確認
+- Phase 8: Codex CLI 委任書作成
+- Phase 9: Codex CLI 実装
+
+**理由:**
+
+- API / DB の疎通結果でズレが見つかると、先に作った委任書がすぐ古くなる
+- 確認済み前提で委任書を確定するほうが仕様として自然
+
+**補足運用:**
+
+- タスク分解直後にドラフト委任書を作るのは可
+- ただし `artifacts/prompts/task-xxx.md` を正式成果物として確定するのは疎通確認後
+
+---
+
+## Q36. AdSense の適用対象は「本体公開HTML」のみか、「公開対象HTML」全体か
+
+**回答:**
+**本体公開HTMLのみ** に固定する。`test-api.html` や `test-db-readonly.html` は常に対象外でよい。
+
+**正式対象:**
+
+- ルート `index.html`
+- 各アプリ本体 `index.html`
+- 必要なら収益導線ページ
+
+**対象外:**
+
+- `test-api.html`
+- `test-db-readonly.html`
+- 管理ページ
+- ローカル確認ページ
+
+**修正文言:**
+
+`公開対象HTMLには共通の Google AdSense タグを <head> に入れること`
+
+ではなく、
+
+`本体公開HTMLおよび収益対象ページには、共通の Google AdSense タグを <head> に入れること`
+
+とする。
+
+**理由:**
+
+- テストページは公開されていても収益対象ではない
+- 検証UIに広告を入れると品質確認の邪魔になりやすい
+- Q30 の「収益源として必須」と両立する
+
+---
+
+## Q37. `current_phase_number` は補助項目として維持するか、それとも廃止するか
+
+**回答:**
+廃止でよい。正本は `current_phase` の英語識別子だけにする。
+
+**正式方針:**
+
+- 残す項目: `current_phase`
+- 廃止する項目: `current_phase_number`
+
+**理由:**
+
+- フェーズ追加や並び替えでずれやすい
+- 実例でもすでにずれている
+- 番号が必要なら表示側で `current_phase` から導出すればよい
+
+**代替案:**
+
+表示順が必要なら `state/schema.md` に順序マップを持たせる。
+
+---
+
+## Q38. Browser Test Operator はローカル専用DB確認ページまで担当範囲に含むか
+
+**回答:**
+含む。ただし、担当範囲を **公開確認** と **ローカル管理確認** に分けて明記する。
+
+**正式な担当範囲:**
+
+- A. 公開確認
+- 本体ページ
+- `test-api.html`
+- `test-db-readonly.html`（ある場合）
+- B. ローカル管理確認
+- ローカルHTTPサーバー上の書き込み確認ページ
+
+**正式手順:**
+
+- ローカルHTTPサーバーを起動
+- `http://localhost:8000/...` で確認
+- 必要なCORS許可を用意
+- 書き込み系の `insert` テストはここで行う
+
+**役割分離:**
+
+- MVP では別ロールに分けない
+- Browser Test Operator が公開確認とローカル管理確認の両方を担当する
+
+**理由:**
+
+- テスト観点が連続している
+- 人数を増やすほどではない
+- 同じ担当者が続けて見たほうが差分に気づきやすい
+
+---
+
+_全38件 回答確定。SPEC.md v0.5 へ反映済み。_
