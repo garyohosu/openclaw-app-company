@@ -9,6 +9,7 @@
 - 作成日: 2026-03-23
 - 最終更新: 2026-03-23（daily-ai-agent 実装パターン、レビュー回答、AdSense要件を反映）
 - 参考実装: `C:\PROJECT\daily-ai-agent`
+- 実行環境: Windows 11 上の WSL2
 
 ---
 
@@ -63,6 +64,8 @@
 ### 3.1 OpenClaw の定義
 
 OpenClaw は本プロジェクトにおける **Pythonオーケストレータ** の総称である。外部製品名ではなく、リポジトリ内の `scripts/main.py` として実装される。
+
+**実行環境:** Windows 11 上の WSL2（Ubuntu）で動作する。Python スクリプトはすべて WSL2 環境内で実行する。
 
 **参考実装:** `C:\PROJECT\daily-ai-agent\scripts\main.py`
 
