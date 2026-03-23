@@ -2,7 +2,7 @@
 
 作成日: 2026-03-23
 対象: SPEC.md 補足設計回答 / 追加レビュー回答
-ステータス: 全54件 回答確定 / SPEC.md v0.8 反映済み
+ステータス: 全54件 回答確定 / SPEC.md v0.8 反映済み / Q55-Q57 未回答（CLASS.md作成時追加）
 
 ---
 
@@ -1206,3 +1206,55 @@ SPEC では `git push` は「人間承認付き操作」であり、`scripts/mai
 
 **理由:**
 SEQUENCE.md の利用フローでは、公開アプリ JS がページ表示直後に `visitor.cgi` へ自動記録する流れで描かれている。SPEC でも `visitor_tracking` は既定値 `true` でテンプレート項目として持つ前提になっているので、「ページロード時の軽い非同期記録」を標準化するのが一番すっきりする。`window.onload` まで待つ必要は薄く、初回操作待ちにすると記録漏れが増える。
+
+---
+
+_全54件 回答確定。SPEC.md v0.8 へ反映済み。_
+
+---
+
+## 2026-03-23 CLASS.md 作成時の不明点（未回答）
+
+---
+
+## Q55. `agents.yaml` の `inputs` / `outputs` は Python 実装側でどう使われるか
+
+**該当箇所:** CLASS.md 図2、SPEC.md Section 4.2
+
+CLASS.md では `AgentMeta.inputs` / `AgentMeta.outputs` を `AgentsYaml` クラスの属性として定義したが、
+各エージェント Python ファイル側でも入出力パスをハードコードする骨格になっている（Section 14）。
+
+- `agents.yaml` の `inputs` / `outputs` は `scripts/main.py` が参照して成果物確認に使うか
+- それとも各エージェント Python ファイルが自分で `agents.yaml` を読んでパスを解決するか
+- 両方に同じパスが書かれる二重管理になるのか、どちらかを正本にするか
+
+クラス図の依存方向（エージェントが AgentsYaml を参照するかどうか）に影響する。
+
+---
+
+## Q56. `QualityGate` の各フラグは誰がどのタイミングで `true` に更新するか
+
+**該当箇所:** CLASS.md 図1、SPEC.md Section 21（状態管理）
+
+CLASS.md では `CompanyState` が `QualityGate` を内包しているが、各フラグの更新タイミングと更新者が不明。
+
+- `ssl_verified` / `cors_verified`: Sakura API Coordinator が Phase 6 完了時に更新するか
+- `browser_test_passed`: Browser Test Operator が Phase 10 完了時に更新するか
+- `adsense_verified` / `test_pages_adsense_clean` / `release_gate_passed`: Release Manager が Phase 11 で更新するか
+- OpenClaw（`main.py`）が各フェーズ完了後に一括更新するか、エージェントが個別に更新するか
+
+更新責任がエージェント側か `main.py` 側かで、クラス間の依存方向が変わる。
+
+---
+
+## Q57. `AppSpec`（各アプリの `spec.md`）は Python データクラスとして定義されるか、それとも Markdown ファイルとして読み書きされるだけか
+
+**該当箇所:** CLASS.md 図4、SPEC.md Section 22
+
+CLASS.md では `AppSpec` をフィールドを持つクラスとして定義したが、実際の実装形式が不明。
+
+- Python の `dataclass` や `TypedDict` として型定義するか
+- 単なる Markdown ファイルとして読み込み・テキスト操作するだけか
+- YAML Front Matter を持つ Markdown として、パース後に辞書として扱うか
+
+MVP での実装形式によって、`AppSpec` が「クラス」として存在するかどうかが変わる。
