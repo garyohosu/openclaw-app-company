@@ -2,7 +2,7 @@
 
 作成日: 2026-03-23
 対象: SPEC.md 補足設計回答 / 追加レビュー回答
-ステータス: 全38件 回答確定 / SPEC.md v0.5 反映済み
+ステータス: 全38件 回答確定 / SPEC.md v0.5 反映済み / Q39-Q43 未回答（USECASE.md作成時追加）
 
 ---
 
@@ -859,3 +859,85 @@ _全8件 回答確定。SPEC.md v0.4 へ反映済み。_
 ---
 
 _全38件 回答確定。SPEC.md v0.5 へ反映済み。_
+
+---
+
+## 2026-03-23 USECASE.md 作成時の不明点（未回答）
+
+---
+
+## Q39. Market Researcher（Phase 1）が参照するデータソースは何か
+
+**該当箇所:** USECASE.md UC01、SPEC.md Section 13.2
+
+USECASE.md の UC01「市場調査を実施する」で Market Researcher が主担当だが、
+実際に何を入力として受け取るかが不明。
+
+- 外部Web検索（スクレイピング / API）を自力で行うか
+- 運営者が事前に準備したリサーチ資料を読み込むだけか
+- Grok / ChatGPT 等の外部AI出力を入力とするか
+
+`artifacts/research/` に書き出す前の **入力ソース** を明記する必要がある。
+
+---
+
+## Q40. エンドユーザーのフィードバックはどの経路で Phase 12（改善スプリント）に届くか
+
+**該当箇所:** USECASE.md 図3・図4、SPEC.md Section 15（Phase 12）
+
+USECASE.md の利用フロー図では、エンドユーザーが公開アプリを使う流れは描けたが、
+フィードバックが改善スプリントに届く経路が存在しない。
+
+- フィードバック収集の仕組みは MVP スコープ外か
+- `visitor.cgi` のアクセスログを改善の入力とするか
+- 運営者が手動でフィードバックを収集し `artifacts/research/` に追加するか
+
+Phase 12 の入力源を明確にしないと改善スプリントのトリガーが不明になる。
+
+---
+
+## Q41. Phase 12 から Phase 1 / Phase 5 へのループバック判断基準は何か
+
+**該当箇所:** USECASE.md 図2（フェーズワークフロー図）、SPEC.md Section 15（Phase 12）
+
+フェーズワークフロー図では Phase 12 から以下の 2 経路を描いた。
+
+- 「次アプリを追加する場合」→ Phase 1（市場調査）へ戻る
+- 「同一アプリを改善する場合」→ Phase 5（タスク分解）へ戻る
+
+しかし、**どの条件でどちらの経路を選ぶか** がSPEC.mdに明記されていない。
+
+- 判断基準（例: 改善規模、ROI閾値、スプリント回数上限）
+- 判断者（CEO Agent か、運営者が手動で決めるか）
+
+を追記すべきか確認が必要。
+
+---
+
+## Q42. ROI Agent は Phase 2（アイデア選定）で動くか Phase 3（PRD作成）で動くか
+
+**該当箇所:** USECASE.md 図5（エージェント組織図）、SPEC.md Section 13.3、Section 15
+
+USECASE.md の図5 では `ROI Agent` を経営層に配置し、Phase 3（PRD作成）への点線を引いたが、
+SPEC.md の Section 13.3（ROI Agent の責務）は「アイデアの ROI スコア算出」と書かれており、
+これは Phase 2（アイデア選定）フェーズの作業に近い。
+
+- ROI Agent は Phase 2 で動くのか、Phase 3 で動くのか
+- 両フェーズに跨がって動くなら、どちらが一次出力か
+
+USECASE.md の図を修正すべきかの判断に影響する。
+
+---
+
+## Q43. Codex CLI への委任書渡し方は「ファイルパス指定」か「標準入力」か
+
+**該当箇所:** USECASE.md UC09・UC10、SPEC.md Section 11（実装エンジン仕様）
+
+USECASE.md では UC09「Codex CLI委任書を作成する」→ UC10「アプリを実装する（Codex CLI）」
+の流れを示したが、OpenClaw が Codex CLI を呼び出す際の具体的な渡し方が不明。
+
+- `codex --file artifacts/prompts/task-001.md` のようにファイルパスを渡すか
+- ファイル内容を読んで標準入力（stdin）に流すか
+- `scripts/main.py` から subprocess として呼ぶ具体的な呼び出しコマンド形式
+
+SPEC.md Section 11 に呼び出し形式のサンプルコマンドを追記すべきか確認。
