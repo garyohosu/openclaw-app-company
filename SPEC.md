@@ -5,9 +5,9 @@
 - 実装エンジン: Codex CLI
 - オーケストレーション: OpenClaw
 - バックエンド連携: Sakuraレンタルサーバー CGI/Python API Toolbox
-- ドキュメント版数: v0.8
+- ドキュメント版数: v0.9
 - 作成日: 2026-03-23
-- 最終更新: 2026-03-23（Q51〜Q54 反映: run_phase呼び出し方式・失敗時state扱い・git push手動確定・visitor.cgi実装タイミングを整理）
+- 最終更新: 2026-03-23（Q55〜Q57 反映: agents.yaml入出力の利用方針・QualityGate更新責任・AppSpec実装形式を整理）
 - 参考実装: `C:\PROJECT\daily-ai-agent`
 - 実行環境: Windows 11 上の WSL2
 
@@ -201,6 +201,12 @@ agents:
 `agents/agents.yaml` は **エージェント台帳兼メタデータ定義** として扱う。`scripts/main.py` はこれを読んで担当、入力、出力を参照してよいが、**実行順序と状態遷移の正本** は `scripts/main.py` が持つ。
 
 標準規則として、`id: market_researcher` は `scripts/agents/market_researcher.py` に対応させる。必要に応じて `default_phases` のような補助項目を追加してよいが、フェーズ割当の最終定義は `main.py` とする。
+
+**`inputs` / `outputs` の利用方針（Q55）:**
+- `inputs` / `outputs` の契約上の正本は `agents.yaml`
+- `scripts/main.py` がこれを参照し、フェーズ開始前の入力ファイル存在確認・終了後の出力ファイル存在確認・`failure_report.md` への記録に使う
+- 各エージェント Python ファイルは自分の責務に必要なパスをコード内に持ってよいが、`agents.yaml` を毎回自分で読んでパス解決する方式は MVP 標準にしない
+- 依存方向: `OpenClaw → AgentsYaml` を正とし、`Agent → AgentsYaml` は必須依存にしない
 
 ### 4.3 採用理由
 
@@ -1591,9 +1597,31 @@ Phase 6 完了後、DB利用時のみ実施。
 
 `state/company_state.json` は機械可読な最新状態の正本、`artifacts/sprints/deploy_report.md` は公開判定理由を含む人間向け監査記録の正本とする。
 
+**`quality_gate` フラグの更新責任（Q56）:**
+- 判定責任は各担当エージェント（成果物・レポートを出力する）
+- `state/company_state.json` への書き込み責任は OpenClaw（`scripts/main.py`）
+- エージェントが `state` を直接書き換えるのを標準にしない
+
+| フラグ | 判定責任エージェント | 更新タイミング |
+|-------|-----------------|--------------|
+| `pages_ready` | Tech Lead Agent / Codex 実装結果レビュー | Phase 9 完了時 |
+| `ssl_verified` | Sakura API Coordinator | Phase 6 完了時 |
+| `cors_verified` | Sakura API Coordinator | Phase 6 完了時 |
+| `browser_test_passed` | Browser Test Operator | Phase 10 完了時 |
+| `adsense_verified` | GitHub Pages Release Manager | Phase 11 判定時 |
+| `test_pages_adsense_clean` | GitHub Pages Release Manager | Phase 11 判定時 |
+| `release_gate_passed` | Release Manager + COO / 運営者 | Phase 11 最終承認時 |
+
 ---
 
 ## 22. 各アプリの `spec.md` テンプレート項目
+
+**実装形式（Q57）:**
+- 正本は `apps/app-xxx-name/spec.md`（Markdown ファイル）
+- 生成は `scripts/create-app-template.py` のテンプレートベース
+- MVP では Python `dataclass` / `TypedDict` を必須にしない
+- CLASS.md の `AppSpec` クラスは「この Markdown が持つべき項目構造」を表した **概念モデル**
+- 将来、自動処理が増えて構造化が必要になった時点で YAML Front Matter + パーサへ移行を検討する
 
 各アプリの `spec.md` には少なくとも以下を含める。
 
