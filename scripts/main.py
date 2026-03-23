@@ -28,27 +28,27 @@ ADSENSE_PUB_ID = "ca-pub-6743751614716161"
 
 # ---- ログ設定 ---------------------------------------------------------------
 
-def setup_logging() -> logging.Logger:
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    today = datetime.now(JST).strftime("%Y-%m-%d")
-    log_path = LOGS_DIR / f"main-{today}.log"
-
+def setup_logging(dry_run: bool = False) -> logging.Logger:
     logger = logging.getLogger("main")
     logger.setLevel(logging.DEBUG)
+    if logger.handlers:
+        return logger
 
     fmt = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
 
-    fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(fmt)
+    if not dry_run:
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        today = datetime.now(JST).strftime("%Y-%m-%d")
+        log_path = LOGS_DIR / f"main-{today}.log"
+        fh = logging.FileHandler(log_path, encoding="utf-8")
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
 
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
     ch.setFormatter(fmt)
-
-    if not logger.handlers:
-        logger.addHandler(fh)
-        logger.addHandler(ch)
+    logger.addHandler(ch)
     return logger
 
 
@@ -118,16 +118,44 @@ def update_state_after_phase(state, phase: str, artifacts_dir: Path = ARTIFACTS_
                 state.quality_gate.release_gate_passed = False
 
 
+def reset_quality_gate_for_phase(state, phase: str) -> None:
+    if phase == "api_connectivity":
+        state.quality_gate.ssl_verified = False
+        state.quality_gate.cors_verified = False
+    elif phase == "testing":
+        state.quality_gate.browser_test_passed = False
+    elif phase == "release":
+        state.quality_gate.adsense_verified = False
+        state.quality_gate.test_pages_adsense_clean = False
+        state.quality_gate.release_gate_passed = False
+
+
+def _list_step_inputs(step_module) -> list[str]:
+    return list(getattr(step_module, "REQUIRED_INPUTS", []))
+
+
+def _list_step_outputs(step_module) -> list[str]:
+    return list(getattr(step_module, "OUTPUTS", []))
+
+
+def _check_required_inputs(required: list[str]) -> list[str]:
+    missing = []
+    for path_str in required:
+        if not Path(path_str).exists():
+            missing.append(path_str)
+    return missing
+
+
 # ---- メイン -----------------------------------------------------------------
 
 def main() -> None:
-    setup_logging()
-    logger = _get_logger()
-
     parser = argparse.ArgumentParser(description="OpenClaw オーケストレータ")
-    parser.add_argument("--dry-run", action="store_true", help="Git操作なし")
+    parser.add_argument("--dry-run", action="store_true", help="no-write mode")
     parser.add_argument("--phase", default="all", help="実行フェーズ指定")
     args = parser.parse_args()
+
+    setup_logging(dry_run=args.dry_run)
+    logger = _get_logger()
 
     logger.info("=" * 60)
     logger.info("=== OpenClaw パイプライン 開始 ===")
@@ -165,77 +193,142 @@ def main() -> None:
     else:
         state = CompanyState.default()
 
-    # Phase 1-2: 市場調査・アイデア選定
-    for name, fn in [
-        ("market_researcher", market_researcher.main),
-        ("trend_analyst", trend_analyst.main),
-        ("pain_finder", pain_finder.main),
-        ("competitor_analyst", competitor_analyst.main),
-        ("roi_agent", roi_agent.main),
-        ("idea_scorer", idea_scorer.main),
-        ("ceo", ceo.main),
-        ("coo", coo.main),
-    ]:
-        if not run_phase(name, fn):
-            state.next_action = f"fix-{name}-failure"
-            state.save(state_path)
-            logger.error(f"{name} 失敗。以降のフェーズをスキップします")
-            sys.exit(1)
+    phases = [
+        {
+            "id": "research",
+            "steps": [
+                ("market_researcher", market_researcher),
+                ("trend_analyst", trend_analyst),
+                ("pain_finder", pain_finder),
+                ("competitor_analyst", competitor_analyst),
+                ("roi_agent", roi_agent),
+                ("idea_scorer", idea_scorer),
+                ("ceo", ceo),
+                ("coo", coo),
+            ],
+        },
+        {
+            "id": "product",
+            "steps": [
+                ("product_planner", product_planner),
+                ("ux_scenario_writer", ux_scenario_writer),
+                ("value_proposition_agent", value_proposition_agent),
+                ("prd_writer", prd_writer),
+            ],
+        },
+        {
+            "id": "design",
+            "steps": [
+                ("solution_architect", solution_architect),
+                ("frontend_architect", frontend_architect),
+                ("api_integration_architect", api_integration_architect),
+                ("adr_writer", adr_writer),
+                ("tech_lead", tech_lead),
+                ("task_breakdown_agent", task_breakdown_agent),
+            ],
+        },
+        {
+            "id": "api_connectivity",
+            "steps": [
+                ("sakura_api_coordinator", sakura_api_coordinator),
+            ],
+            "condition": lambda st: st.runtime_mode in ("toolbox", "db"),
+        },
+        {
+            "id": "prompt",
+            "steps": [
+                ("codex_prompt_writer", codex_prompt_writer),
+            ],
+        },
+        {
+            "id": "release",
+            "steps": [
+                ("github_pages_release_manager", github_pages_release_manager),
+            ],
+        },
+        {
+            "id": "improvement",
+            "steps": [
+                ("improvement_strategist", improvement_strategist),
+            ],
+        },
+    ]
 
-    # Phase 3: PRD作成
-    for name, fn in [
-        ("product_planner", product_planner.main),
-        ("ux_scenario_writer", ux_scenario_writer.main),
-        ("value_proposition_agent", value_proposition_agent.main),
-        ("prd_writer", prd_writer.main),
-    ]:
-        if not run_phase(name, fn):
-            state.next_action = f"fix-{name}-failure"
-            state.save(state_path)
-            sys.exit(1)
-
-    # Phase 4-5: 設計・タスク分解
-    for name, fn in [
-        ("solution_architect", solution_architect.main),
-        ("frontend_architect", frontend_architect.main),
-        ("api_integration_architect", api_integration_architect.main),
-        ("adr_writer", adr_writer.main),
-        ("tech_lead", tech_lead.main),
-        ("task_breakdown_agent", task_breakdown_agent.main),
-    ]:
-        if not run_phase(name, fn):
-            state.next_action = f"fix-{name}-failure"
-            state.save(state_path)
-            sys.exit(1)
-
-    # Phase 6: API疎通確認 (toolbox/db のみ)
-    if state.runtime_mode in ("toolbox", "db"):
-        if not run_phase("sakura_api_coordinator", sakura_api_coordinator.main):
-            state.next_action = "fix-api-connectivity"
-            state.save(state_path)
-            sys.exit(1)
-        update_state_after_phase(state, "api_connectivity")
-        state.save(state_path)
-
-    # Phase 8: Codex CLI 委任書作成
-    if not run_phase("codex_prompt_writer", codex_prompt_writer.main):
-        state.next_action = "fix-prompt-creation"
-        state.save(state_path)
+    phase_ids = [p["id"] for p in phases]
+    if args.phase != "all" and args.phase not in phase_ids:
+        logger.error(f"Unknown phase: {args.phase}")
+        logger.error(f"Available: {', '.join(phase_ids)}")
         sys.exit(1)
 
-    # Phase 11: GitHub Pages 公開
-    if not run_phase("github_pages_release_manager", github_pages_release_manager.main):
-        state.next_action = "fix-release"
-        state.save(state_path)
-        sys.exit(1)
-    update_state_after_phase(state, "release")
-    state.save(state_path)
+    def _run_selected_phase(phase, next_phase_id: str | None) -> None:
+        phase_id = phase["id"]
+        condition = phase.get("condition")
+        if condition is not None and not condition(state):
+            logger.info(f"↷ {phase_id} スキップ (runtime_mode={state.runtime_mode})")
+            if not args.dry_run:
+                state.current_phase = phase_id
+                state.next_action = f"skipped-{phase_id}"
+                state.save(state_path)
+            return
 
-    # Phase 12: 改善スプリント
-    if not run_phase("improvement_strategist", improvement_strategist.main):
-        state.next_action = "fix-improvement"
+        steps = phase["steps"]
+        all_required: list[str] = []
+        all_outputs: list[str] = []
+        for _, mod in steps:
+            all_required.extend(_list_step_inputs(mod))
+            all_outputs.extend(_list_step_outputs(mod))
+
+        missing = _check_required_inputs(all_required)
+        if missing:
+            logger.error(f"{phase_id} 必須入力不足: {missing}")
+            if not args.dry_run:
+                state.current_phase = phase_id
+                state.next_action = f"fix-{phase_id}-missing-inputs"
+                state.save(state_path)
+            sys.exit(1)
+
+        if args.dry_run:
+            logger.info(f"[dry-run] Phase: {phase_id}")
+            logger.info(f"[dry-run] Steps: {[name for name, _ in steps]}")
+            logger.info(f"[dry-run] Required inputs: {sorted(set(all_required))}")
+            logger.info(f"[dry-run] Expected outputs: {sorted(set(all_outputs))}")
+            if phase_id in ("api_connectivity", "testing", "release"):
+                logger.info(f"[dry-run] Would reset quality_gate for {phase_id}")
+                logger.info(f"[dry-run] Would update quality_gate after {phase_id} if reports are OK")
+            return
+
+        state.current_phase = phase_id
+        state.next_action = f"running-{phase_id}"
+        reset_quality_gate_for_phase(state, phase_id)
         state.save(state_path)
-        sys.exit(1)
+
+        for name, mod in steps:
+            if not run_phase(name, mod.main):
+                state.next_action = f"fix-{name}-failure"
+                state.save(state_path)
+                logger.error(f"{name} 失敗。以降のフェーズをスキップします")
+                sys.exit(1)
+
+        update_state_after_phase(state, phase_id)
+        if next_phase_id is None:
+            state.next_action = "pipeline-complete"
+        else:
+            state.next_action = f"start-{next_phase_id}"
+        state.save(state_path)
+
+    selected = phases if args.phase == "all" else [
+        p for p in phases if p["id"] == args.phase
+    ]
+
+    for idx, phase in enumerate(selected):
+        next_phase_id = None
+        if args.phase == "all" and idx + 1 < len(selected):
+            next_phase_id = selected[idx + 1]["id"]
+        elif args.phase != "all":
+            current_index = phase_ids.index(args.phase)
+            if current_index + 1 < len(phase_ids):
+                next_phase_id = phase_ids[current_index + 1]
+        _run_selected_phase(phase, next_phase_id)
 
     logger.info("=" * 60)
     logger.info("=== パイプライン 完了 ===")

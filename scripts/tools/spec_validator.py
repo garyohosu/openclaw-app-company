@@ -9,9 +9,14 @@ import sys
 from pathlib import Path
 
 
+def _strip_code_blocks(content: str) -> str:
+    return re.sub(r"```.*?```", "", content, flags=re.DOTALL)
+
+
 def _extract_field(content: str, field: str) -> str | None:
-    """Markdown 内の `field: value` パターンを抽出する"""
-    pattern = rf"^{re.escape(field)}:\s*(.+)$"
+    """Markdown 内の `field: value` パターンを抽出する（行頭空白許容）"""
+    content = _strip_code_blocks(content)
+    pattern = rf"^[ \t]*{re.escape(field)}:\s*(.+)$"
     match = re.search(pattern, content, re.MULTILINE)
     return match.group(1).strip() if match else None
 
