@@ -1,6 +1,6 @@
 # SEQUENCE.md — OpenClaw App Company シーケンス図
 
-- 対象: SPEC.md v0.6
+- 対象: SPEC.md v0.7
 - 作成日: 2026-03-23
 
 ---
@@ -90,6 +90,8 @@ sequenceDiagram
     actor 運営者
     participant MR as Market Researcher
     participant TA as Trend Analyst
+    participant PF as Pain Finder
+    participant CA as Competitor Analyst
     participant IS as Idea Scorer
     participant ROI as ROI Agent
     participant CEO as CEO Agent
@@ -102,7 +104,13 @@ sequenceDiagram
     MR ->> artifacts: research_report.md + source_notes.md 書き出し
 
     TA ->> artifacts: research_report.md 読み込み
-    TA ->> artifacts: idea_pool.md 書き出し
+    TA ->> artifacts: idea_pool.md に技術動向・話題性追記
+
+    PF ->> artifacts: idea_pool.md 読み込み
+    PF ->> artifacts: idea_pool.md にユーザーの不満・課題追記
+
+    CA ->> artifacts: idea_pool.md 読み込み
+    CA ->> artifacts: idea_pool.md に競合・類似サービス比較追記
 
     IS ->> artifacts: idea_pool.md 読み込み
     Note over IS: 実装難度・価値・話題性・Pages適性でスコア化
@@ -115,7 +123,7 @@ sequenceDiagram
 
     CEO ->> artifacts: scored_ideas.md 読み込み
     CEO ->> 運営者: 方向性確認
-    运営者 -->> CEO: 承認
+    運営者 -->> CEO: 承認
     CEO ->> artifacts: selected_idea.md 書き出し
 ```
 
@@ -347,22 +355,37 @@ sequenceDiagram
     participant artifacts as artifacts/sprints/
 
     main ->> RM: Phase 11 開始
-    RM ->> RM: 本体 index.html の AdSense タグ確認
-    RM ->> RM: ルート index.html の AdSense タグ確認
-    RM ->> RM: AdSense によるレイアウト崩れ確認
-    RM ->> RM: テストページへの AdSense 混入確認
 
-    alt AdSense 確認 NG
-        RM -->> main: Release NG
+    Note over RM: AdSense 判定フロー（USECASE.md 図6 準拠）
+    RM ->> RM: ① 収益対象ページ全体に AdSense タグあるか確認<br>（ルート index.html・各アプリ index.html 等）
+
+    alt ① AdSense タグなし
+        RM -->> main: Release NG（タグ未埋め込み）
         main -->> 運営者: AdSense 修正要求
         運営者 ->> main: 修正後に再実行
-    else AdSense 確認 OK
-        RM ->> RM: 一覧ページ・公開URL・known issues 確認
-        RM ->> artifacts: deploy_report.md 書き出し
-        RM -->> 運営者: リリース承認依頼
-        運営者 ->> git: git push origin main（手動承認操作）
-        git ->> ghp: GitHub Pages ビルド & デプロイ
-        ghp -->> 運営者: 公開完了
+    else ① OK
+        RM ->> RM: ② AdSense によるレイアウト崩れなし確認
+
+        alt ② レイアウト崩れあり
+            RM -->> main: Release NG（レイアウト崩れ）
+            main -->> 運営者: AdSense 修正要求
+            運営者 ->> main: 修正後に再実行
+        else ② OK
+            RM ->> RM: ③ テストページ・管理ページへの AdSense 混入なし確認
+
+            alt ③ 混入あり
+                RM -->> main: Release NG（テストページ混入）
+                main -->> 運営者: AdSense 修正要求
+                運営者 ->> main: 修正後に再実行
+            else ③ OK → Release OK
+                RM ->> RM: 一覧ページ・公開URL・known issues 確認
+                RM ->> artifacts: deploy_report.md 書き出し
+                RM -->> 運営者: リリース承認依頼
+                運営者 ->> git: git push origin main（手動承認操作）
+                git ->> ghp: GitHub Pages ビルド & デプロイ
+                ghp -->> 運営者: 公開完了
+            end
+        end
     end
 ```
 
@@ -384,9 +407,10 @@ sequenceDiagram
     エンドユーザー ->> ghp: https://garyohosu.github.io/...
     ghp -->> エンドユーザー: HTML / CSS / JS 配信
 
-    Note over app: ページロード時に自動記録
-    app ->> visitor: fetch() POST {action:"visit", app_id:..., page:..., referrer:...}
-    visitor -->> app: {status:"ok"}
+    opt visitor_tracking: true の場合（USECASE.md 図4 準拠）
+        app ->> visitor: fetch() POST {action:"visit", app_id:..., page:..., referrer:...}
+        visitor -->> app: {status:"ok"}
+    end
 
     alt Static アプリ
         エンドユーザー ->> app: 操作（変換・メモ等）
@@ -432,10 +456,10 @@ sequenceDiagram
 
     alt 同一アプリ改善（PRD 不要・タスク分解から再開）
         CEO -->> 運営者: Phase 5 ループバック承認
-        运営者 ->> main: python scripts/main.py --phase task_breakdown
+        運営者 ->> main: python scripts/main.py --phase task_breakdown
     else 新規アプリ追加（新テーマ探索・別カテゴリ）
         CEO -->> 運営者: Phase 1 ループバック承認
-        运営者 ->> main: python scripts/main.py --phase research
+        運営者 ->> main: python scripts/main.py --phase research
     end
 
     main ->> artifacts: docs/roadmap.md 更新
