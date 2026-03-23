@@ -550,7 +550,7 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 
 ---
 
-## 2026-03-23 v0.3 追加レビュー（未回答）
+## 2026-03-23 v0.3 追加レビュー（回答確定）
 
 ---
 
@@ -564,6 +564,15 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 
 どちらを正式とするか。`id = 実装ファイル名` の規則に従うならサフィックスなし（`ceo.py`）が正しいが、ツリー表記と矛盾している。
 
+**回答:**
+サフィックスなしに統一する。`agents.yaml` の `id` とファイル名を一致させる。
+
+- `id: ceo` → `scripts/agents/ceo.py`
+- `id: coo` → `scripts/agents/coo.py`
+- `id: market_researcher` → `scripts/agents/market_researcher.py`
+
+Section 5 ツリーの `ceo_agent.py` / `coo_agent.py` は誤りとして修正する。
+
 ---
 
 ## Q27. `artifacts/design/adr/` がリポジトリ構成図に未記載
@@ -573,6 +582,9 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 - Section 5 のツリーには `/artifacts/design` のみで `adr/` サブディレクトリが記載されていない
 - Phase 4 の成果物には `artifacts/design/adr/*.md` が登場する
 - `artifacts/design/adr/` はツリーに追加すべきか
+
+**回答:**
+追加する。`/artifacts/design/adr/` を正式なリポジトリ構成に含める。
 
 ---
 
@@ -586,6 +598,13 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 - Codex Prompt Writer（13.19）が担当するはずだが、対応するフェーズが存在しない
 - Phase 5 と Phase 8 の間に「Phase 5.5: 委任書作成」あるいは「Phase 5 の後工程」として定義すべきか
 
+**回答:**
+Phase 5 と旧 Phase 6 の間に **Phase 6: Codex CLI 委任書作成** を独立追加する。旧 Phase 6〜11 を 1 つずつ後ろへ繰り下げる。
+
+- 主担当: Codex Prompt Writer
+- レビュー: Tech Lead Agent
+- 成果物: `artifacts/prompts/task-001.md`, `task-002.md`, ...
+
 ---
 
 ## Q29. `browser-use CLI など` が曖昧
@@ -597,6 +616,15 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 - `browser-use CLI` は正式採用ツールか、候補例か
 - MVP で使うブラウザ確認ツールを1〜2個に絞って明記すべきでは
 - 代替として Playwright、Puppeteer、手動確認なども選択肢に挙がるが、どれを基準にするか
+
+**回答:**
+MVP の標準は **手動ブラウザ確認 + browser-use CLI** に固定する。
+
+- 手動ブラウザ確認: 必須
+- browser-use CLI: 自動確認の標準
+- Playwright / Puppeteer: 必要時のみ代替採用可
+
+Section 4.1 の「など」を上記3行の明文に書き換える。
 
 ---
 
@@ -610,6 +638,18 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 
 加えて、AdSense タグ（`ca-pub-6743751614716161`）が SPEC.md 本文に埋め込まれている。これはリポジトリに公開してよいか確認が必要。
 
+**回答:**
+AdSense は **MVP 必須** とする。収益源のため daily-ai-agent で入れ忘れた教訓を活かし、仕様で強制する。
+
+- 公開対象ページ（ルート `index.html`・各アプリ `index.html`）に標準組み込み
+- `create-app-template.py` / `build-index.py` 生成時点で挿入済みにする（後付けしない）
+- テストページ・管理ページ・ローカル確認ページは対象外
+- 各アプリ `spec.md` に `adsense_required` / `adsense_applied` / `adsense_checked_at_release` フィールドを追加
+- 公開品質ゲート G6 に AdSense 確認を追加
+- リリース停止条件: 本体ページに AdSense なし → Release NG
+
+AdSense publisher ID はリポジトリに公開してよい（公開情報）。
+
 ---
 
 ## Q31. Phase 0 の成果物に `scripts/main.py` が含まれていない
@@ -619,6 +659,9 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 - Phase 0 の成果物: `agents/agents.yaml`、`docs/org-chart.md`、`SPEC.md`、`state/schema.md`、`state/example-company_state.json`
 - `scripts/main.py` は OpenClaw の中心実装であり、MVP 必須だが Phase 0 成果物に含まれていない
 - Phase 0 に含めるか、別フェーズで作るか
+
+**回答:**
+Phase 0 の成果物に `scripts/main.py` を追加する。必要に応じて `scripts/agents/__init__.py` も含める。
 
 ---
 
@@ -632,6 +675,13 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 
 `prd` と `product` が混在している。`state` の enum を `"product"` に統一すべきか、それとも enum は短縮形 `"prd"` のまま維持するか。
 
+**回答:**
+`"product"` に統一する。ディレクトリ名・フェーズ識別子を揃える。ファイル名 `prd.md` はそのまま維持。
+
+- ディレクトリ: `artifacts/product/`
+- 成果物: `artifacts/product/prd.md`
+- `current_phase` enum: `"product"`（旧 `"prd"` は廃止）
+
 ---
 
 ## Q33. `13.31 エージェント実装規約` のセクション番号が不自然
@@ -643,4 +693,7 @@ _全25件 回答確定。SPEC.md v0.3 へ反映済み。_
 - 他の読者が「31体目のエージェントか」と誤読しやすい
 - 独立したセクション番号（例: `## 11.6`、または新章 `## 13.5 エージェント実装規約`）に分離すべきか
 
-_全8件 未回答。_
+**回答:**
+`## 14. エージェント実装規約（Python）` として独立章に分離する。旧 Section 14〜24 を 1 つずつ繰り下げ（→ 15〜25）。
+
+_全8件 回答確定。SPEC.md v0.4 へ反映済み。_
