@@ -22,17 +22,30 @@ INDEX_TEMPLATE = """\
   <title>OpenClaw App Company</title>
   {adsense_script}
   <style>
-    body {{ font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }}
-    ul {{ list-style: none; padding: 0; }}
-    li {{ margin: 8px 0; }}
-    a {{ text-decoration: none; color: #0066cc; }}
+    :root {{ --bg:#0f1117; --card:#1a1d27; --line:#2a2d3a; --text:#e2e4eb; --muted:#7a7f9a; --accent:#4f8ef7; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }}
+    .wrap {{ max-width: 880px; margin: 0 auto; padding: 40px 20px 64px; }}
+    h1 {{ margin:0; font-size:1.8rem; }}
+    .sub {{ color:var(--muted); margin:8px 0 24px; }}
+    .panel {{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }}
+    ul {{ list-style:none; margin:0; padding:0; display:grid; gap:12px; }}
+    a {{ color:var(--accent); text-decoration:none; font-weight:600; }}
+    .item {{ border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#141823; }}
+    .hint {{ margin-top:20px; color:var(--muted); font-size:.9rem; }}
   </style>
 </head>
 <body>
-  <h1>OpenClaw App Company</h1>
-  <ul>
+  <div class="wrap">
+    <h1>OpenClaw App Company</h1>
+    <p class="sub">生成済みアプリ一覧</p>
+    <section class="panel">
+      <ul>
 {app_links}
-  </ul>
+      </ul>
+    </section>
+    <p class="hint">※ アプリを追加したら <code>python scripts/tools/build_index.py</code> で再生成。</p>
+  </div>
 </body>
 </html>
 """
@@ -44,7 +57,7 @@ def build_index(apps_dir: Path = Path("apps"), output: Path = Path("index.html")
         for app_dir in sorted(apps_dir.iterdir()):
             if app_dir.is_dir() and (app_dir / "index.html").exists():
                 app_links.append(
-                    f'    <li><a href="apps/{app_dir.name}/">{app_dir.name}</a></li>'
+                    f'        <li class="item"><a href="apps/{app_dir.name}/">{app_dir.name}</a></li>'
                 )
 
     content = INDEX_TEMPLATE.format(

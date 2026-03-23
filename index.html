@@ -6,16 +6,29 @@
   <title>OpenClaw App Company</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743751614716161" crossorigin="anonymous"></script>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    ul { list-style: none; padding: 0; }
-    li { margin: 8px 0; }
-    a { text-decoration: none; color: #0066cc; }
+    :root { --bg:#0f1117; --card:#1a1d27; --line:#2a2d3a; --text:#e2e4eb; --muted:#7a7f9a; --accent:#4f8ef7; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 40px 20px 64px; }
+    h1 { margin:0; font-size:1.8rem; }
+    .sub { color:var(--muted); margin:8px 0 24px; }
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+    ul { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+    a { color:var(--accent); text-decoration:none; font-weight:600; }
+    .item { border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#141823; }
+    .hint { margin-top:20px; color:var(--muted); font-size:.9rem; }
   </style>
 </head>
 <body>
-  <h1>OpenClaw App Company</h1>
-  <ul>
-    <li><a href="apps/app-001-kakeibo-memo/">app-001-kakeibo-memo</a></li>
-  </ul>
+  <div class="wrap">
+    <h1>OpenClaw App Company</h1>
+    <p class="sub">生成済みアプリ一覧</p>
+    <section class="panel">
+      <ul>
+        <li class="item"><a href="apps/app-001-kakeibo-memo/">app-001-kakeibo-memo</a></li>
+      </ul>
+    </section>
+    <p class="hint">※ アプリを追加したら <code>python scripts/tools/build_index.py</code> で再生成。</p>
+  </div>
 </body>
 </html>
