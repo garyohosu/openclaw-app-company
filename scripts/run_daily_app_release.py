@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 APPS_DIR = ROOT / "apps"
 DECISION = ROOT / "artifacts" / "executive" / "decision.md"
+SCORED = ROOT / "artifacts" / "research" / "scored_ideas.md"
 
 
 def _run(cmd: list[str]) -> None:
@@ -54,12 +55,44 @@ def _selected_name() -> str:
     return "新規アプリ"
 
 
+def _scored_ideas() -> list[str]:
+    ideas: list[str] = []
+    if SCORED.exists():
+        for line in SCORED.read_text(encoding="utf-8").splitlines():
+            if line.startswith("## "):
+                name = line[3:].strip()
+                if name:
+                    ideas.append(name)
+    return ideas
+
+
+def _existing_app_names() -> set[str]:
+    names: set[str] = set()
+    if not APPS_DIR.exists():
+        return names
+    for spec in APPS_DIR.glob("*/spec.md"):
+        for line in spec.read_text(encoding="utf-8").splitlines():
+            if line.startswith("app_name:"):
+                names.add(line.split(":", 1)[1].strip())
+                break
+    return names
+
+
+def _pick_name() -> str:
+    used = _existing_app_names()
+    candidates = [_selected_name(), *_scored_ideas(), "習慣チェック", "買い物メモ", "学習タイマー"]
+    for c in candidates:
+        if c and c not in used:
+            return c
+    return f"新規アプリ-{len(used)+1}"
+
+
 def main() -> None:
     # 1) run pipeline
     _run([sys.executable, "scripts/main.py"])
 
     # 2) create one new app
-    name = _selected_name()
+    name = _pick_name()
     app_id = _next_app_id() + "-" + _slugify(name)[:24]
     _run([sys.executable, "scripts/tools/create_app_template.py", "--app-id", app_id, "--name", name])
 

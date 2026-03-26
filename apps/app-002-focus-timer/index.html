@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>集中タイマー</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743751614716161" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <h1>集中タイマー</h1>
+    <p class="sub">25分集中 + 5分休憩のシンプルPomodoro。</p>
+
+    <section class="card timer">
+      <div id="mode" class="mode">FOCUS</div>
+      <div id="time" class="time">25:00</div>
+      <div class="buttons">
+        <button id="start">開始</button>
+        <button id="pause" class="ghost">一時停止</button>
+        <button id="reset" class="ghost">リセット</button>
+      </div>
+    </section>
+
+    <section class="card stats">
+      <div>完了セット: <strong id="done">0</strong></div>
+      <button id="clear" class="danger">記録クリア</button>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
