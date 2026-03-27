@@ -28,7 +28,30 @@ HTML_TEMPLATE = """\
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>{app_name}</h1>
+  <main class="wrap">
+    <header>
+      <h1>{app_name}</h1>
+      <p>クイックメモを保存して、あとから見返せるシンプルアプリ。</p>
+    </header>
+
+    <section class="card">
+      <form id="memo-form" class="row">
+        <input id="memo-input" type="text" placeholder="メモを入力" required>
+        <button type="submit">追加</button>
+      </form>
+    </section>
+
+    <section class="card summary">
+      <div>件数: <strong id="count">0</strong></div>
+      <button id="clear-all" class="danger">全削除</button>
+    </section>
+
+    <section class="card">
+      <ul id="memo-list" class="list"></ul>
+      <p id="empty" class="empty">メモはまだありません。</p>
+    </section>
+  </main>
+
   <script src="api.js"></script>
   <script src="app.js"></script>
 </body>
@@ -52,8 +75,68 @@ const API_CONFIG = {{
 APP_JS_TEMPLATE = """\
 const APP_ID = "{app_id}";
 const VISITOR_TRACKING = {visitor_tracking};
+const STORAGE_KEY = `${{APP_ID}}:memos:v1`;
+
+const el = {{
+  form: document.getElementById('memo-form'),
+  input: document.getElementById('memo-input'),
+  list: document.getElementById('memo-list'),
+  empty: document.getElementById('empty'),
+  count: document.getElementById('count'),
+  clearAll: document.getElementById('clear-all')
+}};
+
+const load = () => {{
+  try {{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }}
+  catch {{ return []; }}
+}};
+const save = (rows) => localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
+
+let memos = load();
+
+function render() {{
+  el.list.innerHTML = '';
+  el.count.textContent = String(memos.length);
+  el.empty.style.display = memos.length ? 'none' : 'block';
+
+  memos.forEach((m) => {{
+    const li = document.createElement('li');
+    li.className = 'item';
+    li.innerHTML = `
+      <span>${{m.text}}</span>
+      <button class="del" data-id="${{m.id}}">削除</button>
+    `;
+    el.list.appendChild(li);
+  }});
+}}
+
+el.form.addEventListener('submit', (ev) => {{
+  ev.preventDefault();
+  const text = el.input.value.trim();
+  if (!text) return;
+  memos.unshift({{ id: crypto.randomUUID(), text, createdAt: new Date().toISOString() }});
+  save(memos);
+  el.form.reset();
+  render();
+}});
+
+el.list.addEventListener('click', (ev) => {{
+  const btn = ev.target.closest('.del');
+  if (!btn) return;
+  memos = memos.filter(m => m.id !== btn.dataset.id);
+  save(memos);
+  render();
+}});
+
+el.clearAll.addEventListener('click', () => {{
+  if (!confirm('全メモを削除します。よろしいですか？')) return;
+  memos = [];
+  save(memos);
+  render();
+}});
 
 document.addEventListener('DOMContentLoaded', () => {{
+  render();
   if (VISITOR_TRACKING) {{
     fetch(API_CONFIG.baseUrl + API_CONFIG.endpoints.visitor, {{
       method: 'POST',
@@ -109,7 +192,16 @@ def generate(app_id: str, app_name: str, visitor_tracking: bool = True) -> Path:
         encoding="utf-8",
     )
     (app_dir / "style.css").write_text(
-        "/* styles */\n", encoding="utf-8"
+        ":root{--bg:#0f1117;--card:#1a1d27;--line:#2a2d3a;--text:#e2e4eb;--muted:#8b90a8;--accent:#4f8ef7;--danger:#e05252}\n"
+        "*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif}\n"
+        ".wrap{max-width:760px;margin:0 auto;padding:28px 16px 40px} header h1{margin:0 0 6px} header p{margin:0 0 14px;color:var(--muted)}\n"
+        ".card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}\n"
+        ".row{display:flex;gap:8px;flex-wrap:wrap} input{flex:1;min-width:220px;background:#0f1420;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px}\n"
+        "button{background:var(--accent);border:none;border-radius:8px;color:#fff;padding:10px 12px;cursor:pointer;font-weight:700}\n"
+        ".summary{display:flex;justify-content:space-between;align-items:center}.danger{background:var(--danger)}\n"
+        ".list{list-style:none;margin:0;padding:0;display:grid;gap:8px}.item{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#131928}\n"
+        ".empty{color:var(--muted);margin:2px 0}.del{background:#30384f;padding:6px 10px;font-size:.8rem}\n",
+        encoding="utf-8"
     )
     (app_dir / "api.js").write_text(
         API_JS_TEMPLATE, encoding="utf-8"
