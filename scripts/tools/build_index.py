@@ -45,6 +45,7 @@ INDEX_TEMPLATE = """\
       </ul>
     </section>
     <p class="hint">※ アプリを追加したら <code>python scripts/tools/build_index.py</code> で再生成。</p>
+    <p class="hint"><a href="privacy-policy/">Privacy Policy</a> / <a href="contact/">Contact</a></p>
   </div>
 </body>
 </html>
