@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新規アプリ-39</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6743751614716161" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>新規アプリ-39</h1>
+      <p>クイックメモを保存して、あとから見返せるシンプルアプリ。</p>
+    </header>
+
+    <section class="card">
+      <form id="memo-form" class="row">
+        <input id="memo-input" type="text" placeholder="メモを入力" required>
+        <button type="submit">追加</button>
+      </form>
+    </section>
+
+    <section class="card summary">
+      <div>件数: <strong id="count">0</strong></div>
+      <button id="clear-all" class="danger">全削除</button>
+    </section>
+
+    <section class="card">
+      <ul id="memo-list" class="list"></ul>
+      <p id="empty" class="empty">メモはまだありません。</p>
+    </section>
+  </main>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
